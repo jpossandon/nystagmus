@@ -48,7 +48,7 @@ for p = 1:size(dot_order,1)
     % median gaze position within 100 and end-100 ms of the period the
     % calibration dot is on screen
     aux_calib     = traw>pos_startT+100 & traw<pos_endT-100;
-    if p == size(dot_order,1) & dot_order(p)==5
+    if p == size(dot_order,1) & dot_order(p)==5                             % the last-point should recenter the calibration grid, I have not tested so it is not yet used below 
         x_centerCorrect = median(xraw(aux_calib)); 
         y_centerCorrect = median(yraw(aux_calib));
     else % this by design will re-write values where calibration occured more than once
