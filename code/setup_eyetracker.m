@@ -248,7 +248,9 @@ cmds(end+1) = EyelinkCmd('select_parser_configuration = 0');
 cmds(end+1) = EyelinkCmd( 'use_ellipse_fitter = YES');
 % set sample rate in camera setup screen
 cmds(end+1) = EyelinkCmd( 'sample_rate = 500');
-
+%%% SETUP of calibration requirements for patients qith nzstagmus
+cmds(end+1) = EyelinkCmd( 'manual_collection_minimum_fixation = 50');
+cmds(end+1) = EyelinkCmd( 'manual_collection_fixation_lookback = 500');
 %%% ELPG 25.2.1 / CALIBR.INI  calibration_type = <type>
 % Sets calibration type and recomputed the calibration targets after a
 % display resolution change. Arguments:

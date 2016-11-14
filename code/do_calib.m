@@ -1,4 +1,4 @@
-function calibdata = do_calib(win,TRIALID)
+function caldata = do_calib(win,TRIALID)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % do_calib(win,TRIALID)
 % 
@@ -69,7 +69,12 @@ while cc < length(indxs)+1
         n = n+1;
      end
     while KbCheck; end
-    auxcalib.dotpos = xy(indxs(cc),:);
-    calibdata(indxs(cc))=auxcalib;
+    if cc == length(indxs)+1
+        auxcalib.dotpos = 'drift';
+        caldata(length(indxs)+1)=auxcalib;
+    else
+        auxcalib.dotpos = xy(indxs(cc-1),:);
+        caldata(indxs(cc-1))=auxcalib;
+    end
   end     
 Eyelink('StopRecording');

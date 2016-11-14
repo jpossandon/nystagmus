@@ -41,9 +41,9 @@ win.in_dev                  = 1;                                            % (1
 % (!CHANGE!) adjust this to the appropiate screen
 display(sprintf('\n\n\n\n\n\nPlease check that the display screen resolution is set to 1920x1080 and the screen borders are OK. \nIf screen resolution is changes matlab (and the terminal) need to be re-started.\n'))
 if ismac                                                                    % this bit is just so I can run the experiment in my mac without a problem
-    exp_path                = '/Users/jossando/trabajo/nistagmus/';              % path in my mac
+    exp_path                = '/Users/jossando/trabajo/nystagmus/';              % path in my mac
 else
-    exp_path                = '/home/th/Experiments/nistagmus/';
+    exp_path                = '/home/th/Experiments/nystagmus/';
 end
 
 win.s_n                     = input('Subject number: ','s');                % subject id number, this number is used to open the randomization file
@@ -158,7 +158,7 @@ win.image_rnd     = reshape([nan(1,nBlocks);reshape(win.image_rnd,win.t_perblock
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % THE ACTUAL EXPERIMENT
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-nTrials =33
+% nTrials =33
 b                   = 0;                                                    % block flag
 for nT = 1:nTrials                                                          % loop throught the experiment trials
     
@@ -188,7 +188,8 @@ for nT = 1:nTrials                                                          % lo
             EyelinkDoTrackerSetup(win.el);
 
         
-        calibdata(nBlocks,:) = do_calib(win,nT);
+        caldata(b,:) = do_calib(win,nT);
+        
         Screen('Flip', win.hndl);
         continue
 %         if win.in_dev == 1                                                              
@@ -197,6 +198,7 @@ for nT = 1:nTrials                                                          % lo
 %             GetClicks(win.hndl,0);                                                      
 %         end
     else
+        
         image                       = imread(sprintf('%simages/%d/%d.png',...
                                 exp_path,win.im_folder(nT),win.image(nT)));      
 
@@ -209,11 +211,15 @@ for nT = 1:nTrials                                                          % lo
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
    
     % IMAGE DRAWING AND DECISION OF WHEN TO CHANGE
+        
         Screen('FillRect', win.hndl, win.bkgcolor);                         % remove what was writte or displayed
+        Screen('DrawDots', win.hndl,win.cntr ,win.dotSize*win.rect(3)/100,256,[0 0],1);
+        Screen('DrawDots', win.hndl,win.cntr,win.dotSize*win.rect(3)/100*.3,0,[0 0],1);
+    
         Screen('Flip', win.hndl);
         Eyelink('WaitForModeReady', 500);
 %         EyelinkDoDriftCorrect2(win.el,win.res(1)/2,win.res(2)/2,1)          % drift correction 
-        
+        WaitSecs(1)
         Screen('FillRect', win.hndl, win.bkgcolor);
         Screen('DrawTexture', win.hndl, postextureIndex);                   % draw the trial image
         Eyelink('message','TRIALID %d', nT);                                % message about trial start in the eye-tracker
