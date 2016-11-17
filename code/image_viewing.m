@@ -23,7 +23,7 @@ win.res                     = [1920 1080];                                  %  h
 win.wdth                    = 51;                                           %  51X28.7 cms is teh size of Samsung Syncmaster P2370 in BPN lab EEG rechts
 win.hght                    = 28.7;                                         % 
 win.pixxdeg                 = win.res(1)/(2*180/pi*atan(win.wdth/2/win.Vdst));% 
-win.dotSize                 = 3; % [% of window width]
+win.dotSize                 = 2; % [% of window width]
 win.calibType               = 'HV9';
 win.margin                  = [16 5];
 
