@@ -1,4 +1,4 @@
-function [ux,uy] = calibdata(xraw,yraw,traw,calibpos,tstart_dots,dot_order)
+function [ux,uy,xgaz,ygaz] = calibdata(xraw,yraw,traw,calibpos,tstart_dots,dot_order)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % function [calibmat,xgaz,ygaz] = calib(xraw,yraw,traw,calibpos,tstart_dots,dot_order)
@@ -35,6 +35,11 @@ function [ux,uy] = calibdata(xraw,yraw,traw,calibpos,tstart_dots,dot_order)
 % At the moment only taking the median position, we can implement later
 % that it takes only in account position after a saccade (~fast period of the nystagmus)
 
+figure
+set(gcf,'Position',[33 171 1147 534])
+subplot(1,2,1)
+plot(xraw(abs(xraw)<10000 & abs(yraw)<10000),yraw(abs(xraw)<10000 & abs(yraw)<10000),'.'),hold on
+
 for p = 1:size(dot_order,1)
     
     pos_startT  = tstart_dots(p);
@@ -47,16 +52,18 @@ for p = 1:size(dot_order,1)
     
     % median gaze position within 100 and end-100 ms of the period the
     % calibration dot is on screen
-    aux_calib     = traw>pos_startT+100 & traw<pos_endT-100;
+    aux_calib     = traw>pos_startT+100 & traw<pos_endT-100 & abs(xraw')<10000 & abs(yraw')<10000;
     if p == size(dot_order,1) & dot_order(p)==5                             % the last-point should recenter the calibration grid, I have not tested so it is not yet used below 
-        x_centerCorrect = median(xraw(aux_calib)); 
-        y_centerCorrect = median(yraw(aux_calib));
+        x_centerCorrect = nanmedian(xraw(aux_calib)); 
+        y_centerCorrect = nanmedian(yraw(aux_calib));
     else % this by design will re-write values where calibration occured more than once
-        xr(dot_order(p)) = median(xraw(aux_calib)); 
-        yr(dot_order(p)) = median(yraw(aux_calib)); 
+        xr(dot_order(p)) = nanmedian(xraw(aux_calib)); 
+        yr(dot_order(p)) = nanmedian(yraw(aux_calib)); 
     end
+    plot(xraw(aux_calib),yraw(aux_calib))
+    text(xr(dot_order(p)),yr(dot_order(p)),num2str(dot_order(p)),'FontSize',14)
 end
-
+plot(xr,yr,'.r','MarkerSize',17)
 
 ixC = [2,4,5,6,8];
 A   = [ones(5,1),xr(ixC)',yr(ixC)',xr(ixC).^2',yr(ixC).^2'];
@@ -74,6 +81,9 @@ xgaz    = xgazaux;
 ygaz    = ygazaux;
 
 
+subplot(1,2,2)
+plot(xgaz(abs(xgaz)<3000 & abs(ygaz)<3000),ygaz(abs(xgaz)<3000 & abs(ygaz)<3000),'.')
+axis ij
 % cuadrant correction, this does not work well yet
 % ixC = [1,3,7,9];
 % 

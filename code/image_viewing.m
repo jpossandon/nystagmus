@@ -19,17 +19,17 @@ win.whichScreen             = 0;                                            % (C
 win.FontSZ                  = 20;                                           % font size
 win.bkgcolor                = 0;                                          % screen background color, 127 gray
 win.Vdst                    = 66;                                           % (!CHANGE!) viewer's distance from screen [cm]         
-win.res                     = [1920 1080];                                  %  horizontal x vertical resolution [pixels]
+win.res                     = [1366 768];                                  %  horizontal x vertical resolution [pixels]
 win.wdth                    = 51;                                           %  51X28.7 cms is teh size of Samsung Syncmaster P2370 in BPN lab EEG rechts
 win.hght                    = 28.7;                                         % 
 win.pixxdeg                 = win.res(1)/(2*180/pi*atan(win.wdth/2/win.Vdst));% 
 win.dotSize                 = 3; % [% of window width]
 win.calibType               = 'HV9';
-win.margin                  = [16 5];
+win.margin                  = [4 2];
 
 % Blocks and trials
-win.exp_trials              = 128;%256;
-win.t_perblock              = 32;
+win.exp_trials              = 64;%256;
+win.t_perblock              = 16;
 win.calib_every             = 2; 
 win.trial_length            = 6;
 % Device input during the experiment
