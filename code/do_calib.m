@@ -53,6 +53,9 @@ while cc < length(indxs)+1
                 break;
             elseif keyCode(KbName('DELETE')) || keyCode(KbName('BackSpace'))                     % DELETE and BACKSPACE?
                 cc = cc-1;
+                if cc==0
+                    cc=1;
+                end
                   break;
             end
             

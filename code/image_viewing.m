@@ -10,8 +10,8 @@
 
 % clear all                                                                 % we clear parameters?
 % this is for debugging
-win.DoDummyMode             = 0;                                            % (1) is for debugging without an eye-tracker, (0) is for running the experiment
-% PsychDebugWindowConfiguration(0,0.7);                                       % this is for debugging with a single screen
+win.DoDummyMode             = 1;                                            % (1) is for debugging without an eye-tracker, (0) is for running the experiment
+PsychDebugWindowConfiguration(0,1);%0.7);                                       % this is for debugging with a single screen
 
 % Screen parameters
 
@@ -23,15 +23,15 @@ win.res                     = [1366 768];                                  %  ho
 win.wdth                    = 51;                                           %  51X28.7 cms is teh size of Samsung Syncmaster P2370 in BPN lab EEG rechts
 win.hght                    = 28.7;                                         % 
 win.pixxdeg                 = win.res(1)/(2*180/pi*atan(win.wdth/2/win.Vdst));% 
-win.dotSize                 = 2; % [% of window width]
+win.dotSize                 = 3; % [% of window width]
 win.calibType               = 'HV9';
-win.margin                  = [4 2];
+win.margin                  = [16 8];
 
 % Blocks and trials
-win.exp_trials              = 64;%256;
-win.t_perblock              = 16;
-win.calib_every             = 2; 
-win.trial_length            = 6;
+win.exp_trials              = 30;%256;
+win.t_perblock              = 10;
+win.calib_every             = 1; 
+win.trial_length            = 8;
 % Device input during the experiment
 win.in_dev                  = 1;                                            % (1) - keyboard  (2) - mouse  (3) - pedal (?)    
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -39,7 +39,6 @@ win.in_dev                  = 1;                                            % (1
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % (!CHANGE!) adjust this to the appropiate screen
-display(sprintf('\n\n\n\n\n\nPlease check that the display screen resolution is set to 1920x1080 and the screen borders are OK. \nIf screen resolution is changes matlab (and the terminal) need to be re-started.\n'))
 if ismac                                                                    % this bit is just so I can run the experiment in my mac without a problem
     exp_path                = '/Users/jossando/trabajo/nystagmus/';              % path in my mac
 else
@@ -142,8 +141,13 @@ ListenChar(2)                                                               % di
 % Randomization
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % there is four groups images total 256, in foldes images/ 7 8 26 27
-folders = [repmat(7,1,64),repmat(8,1,64),repmat(26,1,64),repmat(27,1,64)];
-images  = repmat(1:64,1,4);
+% folders = [repmat(7,1,64),repmat(8,1,64),repmat(26,1,64),repmat(27,1,64)];
+% images  = repmat(1:64,1,4);
+% there is three groups of images total 31, in foldes images/ 28
+% (butteflies,9) 29 (faces,11) and 30 (houses,11)
+folders = [repmat(28,1,9),repmat(29,1,11),repmat(30,1,11)];
+images  = [1:9,1:11,1:11];
+
 win.image_rnd     = randsample(1:length(folders),win.exp_trials);
 win.image         = images(win.image_rnd);
 win.im_folder     = folders(win.image_rnd);
@@ -199,9 +203,9 @@ for nT = 1:nTrials                                                          % lo
 %         end
     else
         
-        image                       = imread(sprintf('%simages/%d/%d.png',...
+            image                       = imread(sprintf('%simages/%d/%d.png',...
                                 exp_path,win.im_folder(nT),win.image(nT)));      
-
+       
         postextureIndex             = Screen('MakeTexture', win.hndl, image);   % makes the texture of this trial image
    
     end
