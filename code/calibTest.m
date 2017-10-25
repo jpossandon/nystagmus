@@ -9,12 +9,12 @@
 
 % clear all                                                                 % we clear parameters?
 % this is for debugging
-win.DoDummyMode             = 1;                                            % (1) is for debugging without an eye-tracker, (0) is for running the experiment
-PsychDebugWindowConfiguration(0.7);%0.7);                                       % this is for debugging with a single screen
+win.DoDummyMode             = 0;                                            % (1) is for debugging without an eye-tracker, (0) is for running the experiment
+%PsychDebugWindowConfiguration(2,0.7);%0.7);                                       % this is for debugging with a single screen
 
-% Screen parameters
-
-win.whichScreen             = 0;                                            % (CHANGE?) here we define the screen to use for the experiment, it depend on which computer we are using and how the screens are conected so it might need to be changed if the experiment starts in the wrong screen
+%  Screen parameters
+ 
+win.whichScreen             = 2;                                            % (CHANGE?) here we define the screen to use for the experiment, it depend on which computer we are using and how the screens are conected so it might need to be changed if the experiment starts in the wrong screen
 win.FontSZ                  = 20;                                           % font size
 win.bkgcolor                = 0;                                          % screen background color, 127 gray
 win.Vdst                    = 66;                                           % (!CHANGE!) viewer's distance from screen [cm]         
@@ -41,19 +41,19 @@ win.in_dev                  = 1;                                            % (1
 if ismac                                                                    % this bit is just so I can run the experiment in my mac without a problem
     exp_path                = '/Users/jossando/trabajo/nystagmus/';              % path in my mac
 else
-    exp_path                = '/home/th/Experiments/nystagmus/';
+    exp_path                = 'C:\Users\bpn\Documents\jpossandon\nystagmus\';
 end
 
 win.s_n                     = input('Subject number: ','s');                % subject id number, this number is used to open the randomization file
 win.fnameEDF                = sprintf('s%02dC.EDF',str2num(win.s_n));       % EDF name can be only 8 letters long, so we can have numbers only between 01 and 99
-pathEDF                     = [exp_path 'data/' sprintf('s%02d/',str2num(win.s_n))];                           % where the EDF files are going to be saved
+pathEDF                     = fullfile(exp_path,'data',sprintf('s%02d',str2num(win.s_n)));                           % where the EDF files are going to be saved
 if exist([pathEDF win.fnameEDF],'file')                                         % checks whether there is a file with the same name
     rp = input(sprintf('!Filename %s already exist, do you want to overwrite it (y/n)?',win.fnameEDF),'s');
     if (strcmpi(rp,'n') || strcmpi(rp,'no'))
         error('filename already exist')
     end
 end
-
+mkdir(pathEDF)
 % win.s_age                   = input('Subject age: ','s');
 % win.s_hand                  = input('Subject handedness for writing (l/r): ','s');
 % win.s_gender                = input('Subject gender (m/f): ','s');
@@ -85,7 +85,7 @@ Screen('Preference', 'SkipSyncTests', 2)                                    % fo
 % end
 [win.cntr(1), win.cntr(2)] = WindowCenter(win.hndl);                        % get where is the display screen center
 Screen('BlendFunction',win.hndl, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);     % enable alpha blending for smooth drawing
-HideCursor(win.hndl);                                                       % this to hide the mouse
+%HideCursor(win.hndl);                                                       % this to hide the mouse
 Screen('TextSize', win.hndl, win.FontSZ);                                   % sets teh font size of the text to be diplayed
 KbName('UnifyKeyNames');                                                    % recommended, called again in EyelinkInitDefaults
 win.start_time = clock;
@@ -122,7 +122,7 @@ end
 wrect = Screen('Rect', win.hndl);                                           
 Eyelink('Message','DISPLAY_COORDS %d %d %d %d', 0, 0, wrect(1), wrect(2));  % write display resolution to EDF file
 
-ListenChar(2)                                                               % disable MATLAB windows' keyboard listen (no unwanted edits)
+%ListenChar(2)                                                               % disable MATLAB windows' keyboard listen (no unwanted edits)
 
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -147,7 +147,7 @@ for nT = 1%:nTrials                                                          % l
     % BLOCK START
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-       EyelinkDoTrackerSetup(win.el);
+        EyelinkDoTrackerSetup(win.el);
 
         
         caldata = do_calib(win,nT);

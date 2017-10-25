@@ -8,7 +8,7 @@ function [ux,uy,xgaz,ygaz] = calibdata(samples,saccades,win,dotinfo,method,toplo
 %  
 %   Inputs:
 %       - from samples:
-%           - xraw,yraw     , raw eye position during the whole 9-point calibration
+%           - rawx,rawy     , raw eye position during the whole 9-point calibration
 %                       period. This is, the complete raw data of the
 %                       calibration trial performed with do_calib.m
 %           - traw          , corresponding sample time data
