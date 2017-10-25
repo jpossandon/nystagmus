@@ -44,7 +44,7 @@ while cc < length(indxs)+1
     Eyelink('message','METATR dotpos %d',indxs(cc));                        % position of the calibration dot of next data as an index
     
     n = 1;
-    auxcalib =[];
+    auxraw =[];
     while 1
         [keyIsDown,seconds,keyCode] = KbCheck;
          if keyIsDown
@@ -60,24 +60,35 @@ while cc < length(indxs)+1
             end
             
         end
-%         [data,type] = get_ETdataraw;                                      % TODO: this is to get data online to estimate calibration coefficients with calibdata and be able to do gaze contingent experiments              
-%         if type==200   % samples
-%             auxcalib.time(n,:) = data.time;
-%             auxcalib.px(n,:) = data.px;
-%             auxcalib.py(n,:) = data.py;
-%             auxcalib.gx(n,:) = data.gx;
-%             auxcalib.gy(n,:) = data.gy;
-%             auxcalib.pa(n,:) = data.pa;
-%         end
+        [data,type] = get_ETdataraw;                                      % TODO: this is to get data online to estimate calibration coefficients with calibdata and be able to do gaze contingent experiments              
+        if type==200   % samples
+            auxraw.traw(:,n)  = data.time;
+            auxraw.rawx(:,n)  = data.px;                                   %px,py are raw data, gx,gy gaze data; hx,hy headref, data from both eye might be included            
+            auxraw.rawy(:,n)  = data.py;
+            auxraw.gx(:,n)    = data.gx;
+            auxraw.gy(:,n)    = data.gy;
+            auxraw.pa(:,n)    = data.pa;
+         elseif type==6   % end saccade
+            auxsac.start(:,n) = data.sttime;
+            auxsac.end(:,n)   = data.entime;
+            auxsac.eye(:,n)   = data.eye;
+            auxsac.genx(:,n)  = data.px;                                   %px,py are raw data, gx,gy gaze data; hx,hy headref            
+            auxsac.geny(:,n) = data.py;
+        end
         n = n+1;
      end
     while KbCheck; end
     if cc == length(indxs)+1
-        auxcalib.dotpos = 'drift';
-        caldata(length(indxs)+1)=auxcalib;
+        auxraw.dotpos = 'drift';
+        caldata(length(indxs)+1)=auxraw;
     else
-        auxcalib.dotpos = xy(indxs(cc-1),:);
-        caldata(indxs(cc-1))=auxcalib;
+        auxraw.dotpos = xy(indxs(cc-1),:);
+        caldata(indxs(cc-1))=auxraw;
     end
-  end     
+    if cc < length(indxs)+1
+        [ux,uy,xgaz,ygaz] = calibdata(trial(tr).(useye).samples,trial(tr).(useye).saccade,win,...
+   dotinfo,'sample',1);
+    end
+end   
+  % here give feedback and ask for redo or finish
 Eyelink('StopRecording');
