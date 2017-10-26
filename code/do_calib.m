@@ -130,7 +130,7 @@ while cc < length(indxs)+1
           
         for ey = 1:length(auxraw)
             
-            [caldata(ey).ux,caldata(ey).uy,xyP,xgaz,ygaz] = calibdata(auxraw(ey),auxsac(ey),win,dotinfo,'sample',1);
+            [caldata(ey).ux,caldata(ey).uy,xyP,xgaz,ygaz] = calibdata(auxraw(ey),auxsac(ey),win,dotinfo,'saccade',1);
             if ey == 1, col = [0 0 256];, else col = [256 0 0];,end
             Screen('DrawDots', win.hndl, [auxraw(ey).rawx(1,:);auxraw(ey).rawy(1,:)],4,col,[0 0],1);  %uncorrected data
             Screen('DrawDots', win.hndl, [xgaz;ygaz],6,col,[0 0],0);                                % corrected data
