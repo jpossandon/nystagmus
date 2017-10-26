@@ -1,4 +1,4 @@
-function [ux,uy,xgaz,ygaz] = calibdata(samples,saccades,win,dotinfo,method,toplot)
+function [ux,uy,xyP,xgaz,ygaz] = calibdata(samples,saccades,win,dotinfo,method,toplot)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % function [calibmat,xgaz,ygaz] = calib(xraw,yraw,traw,calibpos,tstart_dots,dot_order)
@@ -12,6 +12,8 @@ function [ux,uy,xgaz,ygaz] = calibdata(samples,saccades,win,dotinfo,method,toplo
 %                       period. This is, the complete raw data of the
 %                       calibration trial performed with do_calib.m
 %           - traw          , corresponding sample time data
+%       - from saccades:
+%           - start, end    , starting and end times of each saccade
 %       - from dotinfo:
 %            - calibpos      , 9x2 matrix describing the position in the screen,
 %                       in pixels, of the calibration points, according to the
@@ -40,7 +42,7 @@ function [ux,uy,xgaz,ygaz] = calibdata(samples,saccades,win,dotinfo,method,toplo
 
 xraw = samples.rawx';
 yraw = samples.rawy';
-traw = samples.time ;
+traw = samples.traw' ;
 % Finding raw position at calib position.
 % At the moment only taking the median position, we can implement later
 % that it takes only in account position after a saccade (~fast period of the nystagmus)
@@ -53,7 +55,7 @@ if toplot
     plot(xraw(abs(xraw)<rawdataLimit & abs(yraw)<rawdataLimit),yraw(abs(xraw)<rawdataLimit & abs(yraw)<rawdataLimit),'.'),hold on
 end
 
-t_margin = 100; %ms
+t_margin = 200; %ms
 for p = 1:size(dotinfo.dot_order,1)
     
     pos_startT  = dotinfo.tstart_dots(p);                                           % pos_startT and pos_endT mark the period corresponding to the current calibration dor
@@ -66,7 +68,7 @@ for p = 1:size(dotinfo.dot_order,1)
     
     % indexes for raw data and saccades within t_margin and end-t_margin ms 
     % of the period the calibration dot is on screen
-    aux_calib     = traw>pos_startT+100 & traw<pos_endT-t_margin & abs(xraw')<rawdataLimit & abs(yraw')<rawdataLimit;
+    aux_calib     = traw>pos_startT+100 & traw<pos_endT-t_margin & abs(xraw)<rawdataLimit & abs(yraw)<rawdataLimit;
     aux_sacc      = find(saccades.start>pos_startT+t_margin & saccades.start<pos_endT-t_margin);    % first saccade after appearance of dot +t_margin
 %     aux_sacc = aux_sacc(saccades.dur(aux_sacc)>median(saccades.dur(aux_sacc)));
 %  if length(aux_sacc)>8
@@ -110,6 +112,9 @@ uy  = A\by;
 xgazaux = ux'*[ones(1,size(xraw',2));xraw';yraw';xraw'.^2;yraw'.^2];
 ygazaux = uy'*[ones(1,size(yraw',2));xraw';yraw';xraw'.^2;yraw'.^2];
 
+xyP = ux'*[ones(1,size(xr,2));xr;yr;xr.^2;yr.^2];
+xyP = [xyP;uy'*[ones(1,size(yr,2));xr;yr;xr.^2;yr.^2]];
+
 xgaz    = xgazaux;
 ygaz    = ygazaux;
 
@@ -119,6 +124,11 @@ if toplot
     line([0 win.rect(3)],[win.rect(4)/2 win.rect(4)/2],'LineStyle',':','Color',[1 0 0])
     line([win.rect(3)/2 win.rect(3)/2],[0 win.rect(4)],'LineStyle',':','Color',[1 0 0])
     plot(xgaz(abs(xgaz)<5000 & abs(ygaz)<5000),ygaz(abs(xgaz)<5000 & abs(ygaz)<5000),'.')
+    for p = 1:size(dotinfo.dot_order,1)
+         text(xr(dotinfo.dot_order(p)),yr(dotinfo.dot_order(p)),num2str(dotinfo.dot_order(p)),'FontSize',18)
+          plot(xr(dotinfo.dot_order(p)),yr(dotinfo.dot_order(p)),'.w','MarkerSize',18)
+          plot(xyP(1,dotinfo.dot_order(p)),xyP(2,dotinfo.dot_order(p)),'.r','MarkerSize',18)
+    end
     axis ij
     axis([0 win.rect(3) 0 win.rect(4)])
 end
