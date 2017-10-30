@@ -59,9 +59,9 @@ Eyelink('StartRecording');
 Eyelink('WaitForModeReady', 50); 
 Eyelink('message','SYNCTIME');  
 
-cc      = 1;
-auxraw  = [];   auxsac  = [];
-n       = 1;    ns      = [1 1];
+cc          = 1;    cv          = 0;
+calibraw    = [];   calibsac    = [];
+n           = 1;    ns          = [1 1];
 while cc < length(indxs)+1        
     % plots thee respective calibration dot
     Screen('DrawDots', win.hndl, dotinfo.calibpos(indxs(cc),:),...    
@@ -80,8 +80,10 @@ while cc < length(indxs)+1
     % order and time of presenting the calibration dot, we are saving
     % always only the last dot presented for a given position
     dotinfo.tstart_dots(cc)   = Eyelink('ReadTime');
-    dotinfo.dot_order(cc,1)   = indxs(cc);
-    
+    if cv == 0
+        dotinfo.dot_order(cc,1)   = indxs(cc);
+    end
+        
     % the calibration is placed by the experimenter, needs to visuallz
     % cheeck that the subject has moved to the right position
     % Pressing SPACE make the calibration to progress and BACKSPACE to go
@@ -104,19 +106,34 @@ while cc < length(indxs)+1
         [data,type] = get_ETdataraw;                                      % this is to get data online to estimate calibration coefficients with calibdata and be able to do gaze contingent experiments              
         if type==200   % samples
             for ey = 1:size(data.px,2)
-                auxraw(ey).traw(:,n)  = data.time;
-                auxraw(ey).rawx(:,n)  = data.gx(ey);                                   %px,py are raw data, gx,gy gaze data; hx,hy headref, data from both eye might be included. The easiest would be to use the uncalibrated GAZE gx,gy data             
-                auxraw(ey).rawy(:,n)  = data.gy(ey);
-                auxraw(ey).pa(:,n)    = data.pa(ey);
+                if cv == 0
+                    calibraw(ey).time(:,n)  = data.time;
+                    calibraw(ey).rawx(:,n)  = data.gx(ey);                                   %px,py are raw data, gx,gy gaze data; hx,hy headref, data from both eye might be included. The easiest would be to use the uncalibrated GAZE gx,gy data             
+                    calibraw(ey).rawy(:,n)  = data.gy(ey);
+                    calibraw(ey).pa(:,n)    = data.pa(ey);
+                else
+                    validraw(ey).time(:,n)  = data.time;
+                    validraw(ey).rawx(:,n)  = data.gx(ey);                                   %px,py are raw data, gx,gy gaze data; hx,hy headref, data from both eye might be included. The easiest would be to use the uncalibrated GAZE gx,gy data             
+                    validraw(ey).rawy(:,n)  = data.gy(ey);
+                    validraw(ey).pa(:,n)    = data.pa(ey);
+                end
             end
              n = n+1;
          elseif type==6   % end saccade
              sEye = data.eye+1;
-            auxsac(sEye).start(:,ns(sEye)) = data.sttime;
-            auxsac(sEye).end(:,ns(sEye))   = data.entime;
-            auxsac(sEye).eye(:,ns(sEye))   = sEye;
-            auxsac(sEye).genx(:,ns(sEye))  = data.genx;                                   %px,py are raw data, gx,gy gaze data; hx,hy headref            
-            auxsac(sEye).geny(:,ns(sEye))  = data.geny;
+             if cv == 0
+                calibsac(sEye).start(:,ns(sEye)) = data.sttime;
+                calibsac(sEye).end(:,ns(sEye))   = data.entime;
+                calibsac(sEye).eye(:,ns(sEye))   = sEye;
+                calibsac(sEye).genx(:,ns(sEye))  = data.genx;                                   %px,py are raw data, gx,gy gaze data; hx,hy headref            
+                calibsac(sEye).geny(:,ns(sEye))  = data.geny;
+             else
+                validsac(sEye).start(:,ns(sEye)) = data.sttime;
+                validsac(sEye).end(:,ns(sEye))   = data.entime;
+                validsac(sEye).eye(:,ns(sEye))   = sEye;
+                validsac(sEye).genx(:,ns(sEye))  = data.genx;                                   %px,py are raw data, gx,gy gaze data; hx,hy headref            
+                validsac(sEye).geny(:,ns(sEye))  = data.geny;
+             end
              ns(sEye) = ns(sEye)+1;
         end
        
@@ -128,32 +145,54 @@ while cc < length(indxs)+1
         Screen('DrawDots', win.hndl, dotinfo.calibpos',win.dotSize*win.rect(3)/100,256,[0 0],1); % calibration dot position
     	Screen('DrawDots', win.hndl, dotinfo.calibpos',win.dotSize*win.rect(3)/100*.3,0,[0 0],1);
           
-        for ey = 1:length(auxraw)
+        for ey = 1:length(calibraw)
+            if cv == 0
+                [caldata(ey).ux,caldata(ey).uy,xyP,xyR,xgaz,ygaz] = calibdata(calibraw(ey),calibsac(ey),win,dotinfo,'saccade',1);
+            else
+                [~,~,~,xyR] = calibdata(validraw(ey),validsac(ey),win,dotinfo,'saccade',1);
+            end
             
-            [caldata(ey).ux,caldata(ey).uy,xyP,xgaz,ygaz] = calibdata(auxraw(ey),auxsac(ey),win,dotinfo,'saccade',1);
             if ey == 1, col = [0 0 256];, else col = [256 0 0];,end
-            Screen('DrawDots', win.hndl, [auxraw(ey).rawx(1,:);auxraw(ey).rawy(1,:)],4,col,[0 0],1);  %uncorrected data
-            Screen('DrawDots', win.hndl, [xgaz;ygaz],6,col,[0 0],0);                                % corrected data
-           
+            if cv == 0
+                Screen('DrawDots', win.hndl, [calibraw(ey).rawx(1,:);calibraw(ey).rawy(1,:)],4,col,[0 0],1);  %uncorrected data
+                Screen('DrawDots', win.hndl, [xgaz;ygaz],6,col,[0 0],0);                                % corrected data
+            end
             % corrected calibration positions
             Screen('DrawDots', win.hndl, xyP,win.dotSize/2*win.rect(3)/100,col,[0 0],1);              
     	    Screen('DrawDots', win.hndl, xyP,win.dotSize/2*win.rect(3)/100*.3,0,[0 0],1);
+            if cv == 1
+                Screen('DrawDots', win.hndl, xyR,win.dotSize/2*win.rect(3)/100,col,[0 0],0);              
+                Screen('DrawDots', win.hndl, xyR,win.dotSize/2*win.rect(3)/100*.3,0,[0 0],0);
+                Screen('DrawLines', windowPtr, reshape([xyP;xyR],2,18),2,255,[0 0]);
+                % here calcualte validation errors and text it
+            end
             for p = 1:size(dotinfo.dot_order,1)
                Screen('DrawText', win.hndl,num2str(dotinfo.dot_order(p)),xyP(1,dotinfo.dot_order(p)),xyP(2,dotinfo.dot_order(p)))
             end
         end
-        Screen('DrawText', win.hndl, 'CONTINUE (SPACE)             REPEAT (BACKKSPACE)', 400, 400, 255);
-        Screen('Flip', win.hndl);
+        if cv == 0
+            Screen('DrawText', win.hndl, 'CONTINUE TO VALIDATION (V)             REPEAT CALIBRATION (C)', 400, 400, 255);
+        else
+            Screen('DrawText', win.hndl, 'ACCEPT VALIDATION (SPACE)     REPEAT VALIDATION (V)	REPEAT CALIBRATION (C)', 400, 400, 255);
+        end
+            Screen('Flip', win.hndl);
       
         while 1
             [keyIsDown,seconds,keyCode] = KbCheck;
              if keyIsDown
-                if keyCode(KbName('space'))         % CONTINUE TO EXPERIMENT
+                if keyCode(KbName('V'))         % CONTINUE TO VALIDATION
+                    cv = 1;
+                    cc = 1;
+                    validraw = [];
+                    validsac = [];
                     break;
-                elseif keyCode(KbName('DELETE')) || keyCode(KbName('BackSpace'))                     % REDO EVERYTHING
-                    cc=1;
-                    auxraw =[];
-                    auxsac = [];
+                elseif keyCode(KbName('space'))         % CONTINUE TO EXPERIMENT
+                     break;
+                elseif keyCode(KbName('R'))                     % REDO EVERYTHING
+                    cc = 1;
+                    cv = 0;
+                    calibraw = [];
+                    calibsac = [];
                     break
                 end
                  
@@ -161,7 +200,8 @@ while cc < length(indxs)+1
         end
    %    
     end
+   
 end   
-%caldata.auxraw = auxraw;
+%caldata.calibraw = calibraw;
 %caldata.auxsac = auxsac;
 Eyelink('StopRecording');

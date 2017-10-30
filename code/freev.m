@@ -8,7 +8,9 @@ if strcmp(win.calibType,'HV9')                                              % po
    dotinfo.calibpos(1:9,2)  = reshape(repmat(mPix(2):(win.rect(4)-2*(mPix(2)))/2:win.rect(4)-mPix(2),3,1),9,1);
 end
 
-[trial,meta] = totrial('/Users/jossando/trabajo/India/data/s03/s03.edf',{'raw','gaze'});
+[trial,meta] = totrial('/Users/jossando/trabajo/India/data/s01/s01C.edf',{'raw','gaze'});
+
+%[trial,meta] = totrial('/Users/jossando/trabajo/India/data/s03/s03.edf',{'raw','gaze'});
 %[trial,meta] =totrial('/Users/jossando/trabajo/India/data/images/sanwar/sanwar.edf',{'raw','gaze'});
 tr = 1;
 if isfield(trial(tr).left,'saccade')
@@ -18,7 +20,7 @@ else
 end
 dotinfo.tstart_dots = trial(tr).dotpos.time(1:9);
 dotinfo.dot_order   = str2num(trial(tr).dotpos.msg(1:9));
-[ux,uy,xgaz,ygaz] = calibdata(trial(tr).(useye).samples,trial(tr).(useye).saccade,win,...
+[ux,uy,xyP,xyR,xgaz,ygaz] = calibdata(trial(tr).(useye).samples,trial(tr).(useye).saccade,win,...
    dotinfo,'sample',1);
 doimage(gcf,'/Users/jossando/trabajo/India/result/sanwar/','png',['calib_' num2str(tr)],1);
 

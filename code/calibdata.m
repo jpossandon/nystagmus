@@ -1,4 +1,4 @@
-function [ux,uy,xyP,xgaz,ygaz] = calibdata(samples,saccades,win,dotinfo,method,toplot)
+function [ux,uy,xyP,xyR,xgaz,ygaz] = calibdata(samples,saccades,win,dotinfo,method,toplot)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % function [calibmat,xgaz,ygaz] = calib(xraw,yraw,traw,calibpos,tstart_dots,dot_order)
@@ -36,13 +36,14 @@ function [ux,uy,xyP,xgaz,ygaz] = calibdata(samples,saccades,win,dotinfo,method,t
 %                       screen. To obtain calibrated data from gaze data,
 %                       xgaze = ux'*[ones(1,size(xraw',2));xraw';yraw';xraw'.^2;yraw'.^2];
 %                       ygaze = uy'*[ones(1,size(yraw',2));xraw';yraw';xraw'.^2;yraw'.^2];
-%                          
+%       - xyP           , position of calibration points post-calibration
+%       - xyR           , position of calibration points pre-calibration                   
 % JPO, Hamburg, 11-2016
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 xraw = samples.rawx';
 yraw = samples.rawy';
-traw = samples.traw' ;
+traw = samples.time' ;
 % Finding raw position at calib position.
 % At the moment only taking the median position, we can implement later
 % that it takes only in account position after a saccade (~fast period of the nystagmus)
@@ -84,25 +85,25 @@ for p = 1:size(dotinfo.dot_order,1)
         y_centerCorrect = nanmedian(yraw(aux_calib));
     else % this by design will re-write values where calibration occured more than once
         if strcmp(method,'sample')
-            xr(dotinfo.dot_order(p)) = nanmedian(xraw(aux_calib)); 
-            yr(dotinfo.dot_order(p)) = nanmedian(yraw(aux_calib)); 
+            xyR(1,dotinfo.dot_order(p)) = nanmedian(xraw(aux_calib)); 
+            xyR(2,dotinfo.dot_order(p)) = nanmedian(yraw(aux_calib)); 
         elseif strcmp(method,'saccade')
-            xr(dotinfo.dot_order(p)) = nanmedian(xraw(aux_saccT)); 
-            yr(dotinfo.dot_order(p)) = nanmedian(yraw(aux_saccT)); 
+            xyR(1,dotinfo.dot_order(p)) = nanmedian(xraw(aux_saccT)); 
+            xyR(2,dotinfo.dot_order(p)) = nanmedian(yraw(aux_saccT)); 
         elseif strcmp(method,'both') 
-            xr(dotinfo.dot_order(p)) = mean([nanmedian(xraw(aux_calib)),nanmedian(xraw(aux_saccT))]); 
-            yr(dotinfo.dot_order(p)) = mean([nanmedian(yraw(aux_calib)),nanmedian(yraw(aux_saccT))]); 
+            xyR(1,dotinfo.dot_order(p)) = mean([nanmedian(xraw(aux_calib)),nanmedian(xraw(aux_saccT))]); 
+            xyR(2,dotinfo.dot_order(p)) = mean([nanmedian(yraw(aux_calib)),nanmedian(yraw(aux_saccT))]); 
         end
     end
     if toplot
         plot(xraw(aux_calib),yraw(aux_calib))
         plot(xraw(aux_saccT),yraw(aux_saccT),'.r','MarkerSize',24)
-        text(xr(dotinfo.dot_order(p)),yr(dotinfo.dot_order(p)),num2str(dotinfo.dot_order(p)),'FontSize',18)
+        text(xyR(1,dotinfo.dot_order(p)),xyR(2,dotinfo.dot_order(p)),num2str(dotinfo.dot_order(p)),'FontSize',18)
     end
 end
 
 ixC = [2,4,5,6,8];                                                          % calibration dots top,left,center,right,bottom are the ones used for the basic calibration equation
-A   = [ones(5,1),xr(ixC)',yr(ixC)',xr(ixC).^2',yr(ixC).^2'];
+A   = [ones(5,1),xyR(1,ixC)',xyR(2,ixC)',xyR(1,ixC).^2',xyR(2,ixC).^2'];
 bx  = dotinfo.calibpos(ixC,1);
 by  = dotinfo.calibpos(ixC,2);
 
@@ -112,21 +113,21 @@ uy  = A\by;
 xgazaux = ux'*[ones(1,size(xraw',2));xraw';yraw';xraw'.^2;yraw'.^2];
 ygazaux = uy'*[ones(1,size(yraw',2));xraw';yraw';xraw'.^2;yraw'.^2];
 
-xyP = ux'*[ones(1,size(xr,2));xr;yr;xr.^2;yr.^2];
-xyP = [xyP;uy'*[ones(1,size(yr,2));xr;yr;xr.^2;yr.^2]];
+xyP = ux'*[ones(1,size(xyR,2));xyR(1,:);xyR(2,:);xyR(1,:).^2;xyR(2,:).^2];
+xyP = [xyP;uy'*[ones(1,size(xyR,2));xyR(1,:);xyR(2,:);xyR(1,:).^2;xyR(2,:).^2]];
 
 xgaz    = xgazaux;
 ygaz    = ygazaux;
 
 if toplot
-    plot(xr,yr,'.r','MarkerSize',17)
+    plot(xyR(1,:),xyR(2,:),'.r','MarkerSize',17)
     subplot(1,2,2),hold on
     line([0 win.rect(3)],[win.rect(4)/2 win.rect(4)/2],'LineStyle',':','Color',[1 0 0])
     line([win.rect(3)/2 win.rect(3)/2],[0 win.rect(4)],'LineStyle',':','Color',[1 0 0])
     plot(xgaz(abs(xgaz)<5000 & abs(ygaz)<5000),ygaz(abs(xgaz)<5000 & abs(ygaz)<5000),'.')
     for p = 1:size(dotinfo.dot_order,1)
-         text(xr(dotinfo.dot_order(p)),yr(dotinfo.dot_order(p)),num2str(dotinfo.dot_order(p)),'FontSize',18)
-          plot(xr(dotinfo.dot_order(p)),yr(dotinfo.dot_order(p)),'.w','MarkerSize',18)
+         text(xyR(1,dotinfo.dot_order(p)),xyR(2,dotinfo.dot_order(p)),num2str(dotinfo.dot_order(p)),'FontSize',18)
+          plot(xyR(1,dotinfo.dot_order(p)),xyR(2,dotinfo.dot_order(p)),'.w','MarkerSize',18)
           plot(xyP(1,dotinfo.dot_order(p)),xyP(2,dotinfo.dot_order(p)),'.r','MarkerSize',18)
     end
     axis ij
