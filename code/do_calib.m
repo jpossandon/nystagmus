@@ -59,9 +59,11 @@ Eyelink('StartRecording');
 Eyelink('WaitForModeReady', 50); 
 Eyelink('message','SYNCTIME');  
 
+clType      = 'sample';
 cc          = 1;    cv          = 0;
 calibraw    = [];   calibsac    = [];
 n           = 1;    ns          = [1 1];
+nv          = 1;    nsv         = [1 1];
 while cc < length(indxs)+1        
     % plots thee respective calibration dot
     Screen('DrawDots', win.hndl, dotinfo.calibpos(indxs(cc),:),...    
@@ -112,13 +114,14 @@ while cc < length(indxs)+1
                     calibraw(ey).rawy(:,n)  = data.gy(ey);
                     calibraw(ey).pa(:,n)    = data.pa(ey);
                 else
-                    validraw(ey).time(:,n)  = data.time;
-                    validraw(ey).rawx(:,n)  = data.gx(ey);                                   %px,py are raw data, gx,gy gaze data; hx,hy headref, data from both eye might be included. The easiest would be to use the uncalibrated GAZE gx,gy data             
-                    validraw(ey).rawy(:,n)  = data.gy(ey);
-                    validraw(ey).pa(:,n)    = data.pa(ey);
+                    validraw(ey).time(:,nv)  = data.time;
+                    validraw(ey).rawx(:,nv)  = data.gx(ey);                                   %px,py are raw data, gx,gy gaze data; hx,hy headref, data from both eye might be included. The easiest would be to use the uncalibrated GAZE gx,gy data             
+                    validraw(ey).rawy(:,nv)  = data.gy(ey);
+                    validraw(ey).pa(:,nv)    = data.pa(ey);
                 end
             end
-             n = n+1;
+             n  = n+1;
+             nv = nv+1;
          elseif type==6   % end saccade
              sEye = data.eye+1;
              if cv == 0
@@ -128,13 +131,14 @@ while cc < length(indxs)+1
                 calibsac(sEye).genx(:,ns(sEye))  = data.genx;                                   %px,py are raw data, gx,gy gaze data; hx,hy headref            
                 calibsac(sEye).geny(:,ns(sEye))  = data.geny;
              else
-                validsac(sEye).start(:,ns(sEye)) = data.sttime;
-                validsac(sEye).end(:,ns(sEye))   = data.entime;
-                validsac(sEye).eye(:,ns(sEye))   = sEye;
-                validsac(sEye).genx(:,ns(sEye))  = data.genx;                                   %px,py are raw data, gx,gy gaze data; hx,hy headref            
-                validsac(sEye).geny(:,ns(sEye))  = data.geny;
-             end
+                validsac(sEye).start(:,nsv(sEye)) = data.sttime;
+                validsac(sEye).end(:,nsv(sEye))   = data.entime;
+                validsac(sEye).eye(:,nsv(sEye))   = sEye;
+                validsac(sEye).genx(:,nsv(sEye))  = data.genx;                                   %px,py are raw data, gx,gy gaze data; hx,hy headref            
+                validsac(sEye).geny(:,nsv(sEye))  = data.geny;
+              end
              ns(sEye) = ns(sEye)+1;
+             nsv(sEye) = nsv(sEye)+1;
         end
        
      end
@@ -146,11 +150,11 @@ while cc < length(indxs)+1
     	Screen('DrawDots', win.hndl, dotinfo.calibpos',win.dotSize*win.rect(3)/100*.3,0,[0 0],1);
           
         for ey = 1:length(calibraw)
-            if cv == 0
-                [caldata(ey).ux,caldata(ey).uy,xyP,xyR,xgaz,ygaz] = calibdata(calibraw(ey),calibsac(ey),win,dotinfo,'saccade',1);
-            else
-                [~,~,~,xyR] = calibdata(validraw(ey),validsac(ey),win,dotinfo,'saccade',1);
-            end
+             if cv == 0
+                 [caldata(ey).ux,caldata(ey).uy,xyP,xyR,xgaz,ygaz] = calibdata(calibraw(ey),calibsac(ey),win,dotinfo,clType,1);
+             else
+                 [bap,bip,bup,xyR] = calibdata(validraw(ey),validsac(ey),win,dotinfo,clType,1);      %it seems that ingoring output with a tilde does not work in windows?
+             end
             
             if ey == 1, col = [0 0 256];, else col = [256 0 0];,end
             if cv == 0
@@ -161,19 +165,25 @@ while cc < length(indxs)+1
             Screen('DrawDots', win.hndl, xyP,win.dotSize/2*win.rect(3)/100,col,[0 0],1);              
     	    Screen('DrawDots', win.hndl, xyP,win.dotSize/2*win.rect(3)/100*.3,0,[0 0],1);
             if cv == 1
-                Screen('DrawDots', win.hndl, xyR,win.dotSize/2*win.rect(3)/100,col,[0 0],0);              
-                Screen('DrawDots', win.hndl, xyR,win.dotSize/2*win.rect(3)/100*.3,0,[0 0],0);
-                Screen('DrawLines', windowPtr, reshape([xyP;xyR],2,18),2,255,[0 0]);
+                xyRP = caldata(ey).ux'*[ones(1,size(xyR,2));xyR(1,:);xyR(2,:);xyR(1,:).^2;xyR(2,:).^2];
+                xyRP = [xyRP;caldata(ey).uy'*[ones(1,size(xyR,2));xyR(1,:);xyR(2,:);xyR(1,:).^2;xyR(2,:).^2]];
+                Screen('DrawDots', win.hndl, xyRP,win.dotSize/2*win.rect(3)/100,col,[0 0],0);              
+                Screen('DrawDots', win.hndl, xyRP,win.dotSize/2*win.rect(3)/100*.3,0,[0 0],0);
+                Screen('DrawLines',win.hndl, reshape([xyP;xyRP],2,18),2,255,[0 0]);
+                for p = 1:size(dotinfo.dot_order,1)
+                    calData(ey).error(dotinfo.dot_order(p)) = sqrt((xyP(1,dotinfo.dot_order(p))-xyRP(1,dotinfo.dot_order(p))).^2+(xyP(2,dotinfo.dot_order(p))-xyRP(2,dotinfo.dot_order(p))).^2)./win.pixxdeg;
+                    Screen('DrawText', win.hndl,sprintf('%2.2f',calData(ey).error(dotinfo.dot_order(p))),xyRP(1,dotinfo.dot_order(p)),xyRP(2,dotinfo.dot_order(p)),[255 255 0]);
+                end
                 % here calcualte validation errors and text it
             end
             for p = 1:size(dotinfo.dot_order,1)
-               Screen('DrawText', win.hndl,num2str(dotinfo.dot_order(p)),xyP(1,dotinfo.dot_order(p)),xyP(2,dotinfo.dot_order(p)))
+               Screen('DrawText', win.hndl,num2str(dotinfo.dot_order(p)),xyP(1,dotinfo.dot_order(p)),xyP(2,dotinfo.dot_order(p)));
             end
         end
         if cv == 0
             Screen('DrawText', win.hndl, 'CONTINUE TO VALIDATION (V)             REPEAT CALIBRATION (C)', 400, 400, 255);
         else
-            Screen('DrawText', win.hndl, 'ACCEPT VALIDATION (SPACE)     REPEAT VALIDATION (V)	REPEAT CALIBRATION (C)', 400, 400, 255);
+            Screen('DrawText', win.hndl, 'ACCEPT VALIDATION (SPACE)    REPEAT VALIDATION (V)    REPEAT CALIBRATION (C)', 400, 400, 255);
         end
             Screen('Flip', win.hndl);
       
@@ -188,19 +198,21 @@ while cc < length(indxs)+1
                     break;
                 elseif keyCode(KbName('space'))         % CONTINUE TO EXPERIMENT
                      break;
-                elseif keyCode(KbName('R'))                     % REDO EVERYTHING
+                elseif keyCode(KbName('C'))                     % REDO EVERYTHING
+                    
                     cc = 1;
                     cv = 0;
                     calibraw = [];
                     calibsac = [];
+                   
                     break
                 end
                  
              end
         end
-   %    
+    indxs  
     end
-   
+    
 end   
 %caldata.calibraw = calibraw;
 %caldata.auxsac = auxsac;
