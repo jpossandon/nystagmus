@@ -151,9 +151,9 @@ while cc < length(indxs)+1
           
         for ey = 1:length(calibraw)
              if cv == 0
-                 [caldata(ey).ux,caldata(ey).uy,xyP,xyR,xgaz,ygaz] = calibdata(calibraw(ey),calibsac(ey),win,dotinfo,clType,1);
+                 [caldata(ey).ux,caldata(ey).uy,xyP,xyR,xgaz,ygaz] = calibdata(calibraw(ey),calibsac(ey),win,dotinfo,clType,0);
              else
-                 [bap,bip,bup,xyR] = calibdata(validraw(ey),validsac(ey),win,dotinfo,clType,1);      %it seems that ingoring output with a tilde does not work in windows?
+                 [bap,bip,bup,xyR] = calibdata(validraw(ey),validsac(ey),win,dotinfo,clType,0);      %it seems that ingoring output with a tilde does not work in windows?
              end
             
             if ey == 1, col = [0 0 256];, else col = [256 0 0];,end
@@ -181,7 +181,7 @@ while cc < length(indxs)+1
             end
         end
         if cv == 0
-            Screen('DrawText', win.hndl, 'CONTINUE TO VALIDATION (V)             REPEAT CALIBRATION (C)', 400, 400, 255);
+            Screen('DrawText', win.hndl, 'CONTINUE TO VALIDATION (V)     REPEAT CALIBRATION (C)     CONTINUE EXP(SPACE)', 400, 400, 255);
         else
             Screen('DrawText', win.hndl, 'ACCEPT VALIDATION (SPACE)    REPEAT VALIDATION (V)    REPEAT CALIBRATION (C)', 400, 400, 255);
         end

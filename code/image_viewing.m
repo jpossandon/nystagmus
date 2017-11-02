@@ -10,8 +10,8 @@
 
 % clear all                                                                 % we clear parameters?
 % this is for debugging
-win.DoDummyMode             = 1;                                            % (1) is for debugging without an eye-tracker, (0) is for running the experiment
-PsychDebugWindowConfiguration(0,1);%0.7);                                       % this is for debugging with a single screen
+win.DoDummyMode             = 0;                                            % (1) is for debugging without an eye-tracker, (0) is for running the experiment
+%PsychDebugWindowConfiguration(0,1);%0.7);                                       % this is for debugging with a single screen
 
 % Screen parameters
 
@@ -19,7 +19,7 @@ win.whichScreen             = 0;                                            % (C
 win.FontSZ                  = 20;                                           % font size
 win.bkgcolor                = 0;                                          % screen background color, 127 gray
 win.Vdst                    = 66;                                           % (!CHANGE!) viewer's distance from screen [cm]         
-win.res                     = [1366 768];                                  %  horizontal x vertical resolution [pixels]
+win.res                     = [1920 1080];%[1366 768];                                  %  horizontal x vertical resolution [pixels]
 win.wdth                    = 51;                                           %  51X28.7 cms is teh size of Samsung Syncmaster P2370 in BPN lab EEG rechts
 win.hght                    = 28.7;                                         % 
 win.pixxdeg                 = win.res(1)/(2*180/pi*atan(win.wdth/2/win.Vdst));% 
@@ -28,8 +28,8 @@ win.calibType               = 'HV9';
 win.margin                  = [16 8];
 
 % Blocks and trials
-win.exp_trials              = 30;%256;
-win.t_perblock              = 10;
+win.exp_trials              = 100;%256;
+win.t_perblock              = 20;
 win.calib_every             = 1; 
 win.trial_length            = 8;
 % Device input during the experiment
@@ -42,12 +42,12 @@ win.in_dev                  = 1;                                            % (1
 if ismac                                                                    % this bit is just so I can run the experiment in my mac without a problem
     exp_path                = '/Users/jossando/trabajo/nystagmus/';              % path in my mac
 else
-    exp_path                = '/home/th/Experiments/nystagmus/';
+    exp_path                = 'C:\Users\bpn\Documents\jpossandon\nystagmus\';
 end
 
 win.s_n                     = input('Subject number: ','s');                % subject id number, this number is used to open the randomization file
 win.fnameEDF                = sprintf('s%02d.EDF',str2num(win.s_n));       % EDF name can be only 8 letters long, so we can have numbers only between 01 and 99
-pathEDF                     = [exp_path 'data/' sprintf('s%02d/',str2num(win.s_n))];                           % where the EDF files are going to be saved
+pathEDF                     = fullfile(exp_path,'data',sprintf('s%02d',str2num(win.s_n)),filesep);                           % where the EDF files are going to be saved
 if exist([pathEDF win.fnameEDF],'file')                                         % checks whether there is a file with the same name
     rp = input(sprintf('!Filename %s already exist, do you want to overwrite it (y/n)?',win.fnameEDF),'s');
     if (strcmpi(rp,'n') || strcmpi(rp,'no'))
@@ -143,10 +143,11 @@ ListenChar(2)                                                               % di
 % there is four groups images total 256, in foldes images/ 7 8 26 27
 % folders = [repmat(7,1,64),repmat(8,1,64),repmat(26,1,64),repmat(27,1,64)];
 % images  = repmat(1:64,1,4);
-% there is three groups of images total 31, in foldes images/ 28
-% (butteflies,9) 29 (faces,11) and 30 (houses,11)
-folders = [repmat(28,1,9),repmat(29,1,11),repmat(30,1,11)];
-images  = [1:9,1:11,1:11];
+% there is fivegroups of images total 53, in foldes images/ 
+% 28 (butteflies,9) 29 (faces,11) 30 (houses,11) 31 (scrambled faces, 11)
+% 32 (scrambled houses, 11)
+folders = [repmat(8,1,47),repmat(28,1,9),repmat(29,1,11),repmat(30,1,11),repmat(31,1,11),repmat(32,1,11)];
+images  = [1:47,1:9,1:11,1:11,1:11,1:11];
 
 win.image_rnd     = randsample(1:length(folders),win.exp_trials);
 win.image         = images(win.image_rnd);
@@ -192,10 +193,10 @@ for nT = 1:nTrials                                                          % lo
             EyelinkDoTrackerSetup(win.el);
 
         
-        caldata(b,:) = do_calib(win,nT);
+        caldata = do_calib(win,nT);
         
         Screen('Flip', win.hndl);
-        continue
+         continue
 %         if win.in_dev == 1                                                              
 %             waitForKB_linux({'space'});                                           
 %         elseif win.in_dev == 2
@@ -203,8 +204,8 @@ for nT = 1:nTrials                                                          % lo
 %         end
     else
         
-            image                       = imread(sprintf('%simages/%d/%d.png',...
-                                exp_path,win.im_folder(nT),win.image(nT)));      
+            image                       = imread(fullfile(exp_path,'images',sprintf('%d%s%d.png',...
+                               win.im_folder(nT),filesep,win.image(nT))));      
        
         postextureIndex             = Screen('MakeTexture', win.hndl, image);   % makes the texture of this trial image
    
@@ -296,5 +297,6 @@ Eyelink('Shutdown');                                                        % cl
 Screen('CloseAll');                                                         % close the PTB screen
 Screen('Preference','Verbosity', prevVerbos);                               % restore previous verbosity
 Screen('Preference','VisualDebugLevel', prevVisDbg);                        % restore prev vis dbg
-% fclose(obj);                                                                % close the serial port
+% fclose(obj);
+% % close the serial port
 ListenChar(1)                                                               % restore MATLAB keyboard listening (on command window)
