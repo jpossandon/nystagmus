@@ -193,5 +193,6 @@ Eyelink('Shutdown');                                                        % cl
 Screen('CloseAll');                                                         % close the PTB screen
 Screen('Preference','Verbosity', prevVerbos);                               % restore previous verbosity
 Screen('Preference','VisualDebugLevel', prevVisDbg);                        % restore prev vis dbg
-% fclose(obj);                                                                % close the serial port
+% fclose(obj);
+% % close the serial port
 ListenChar(1)             

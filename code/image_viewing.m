@@ -28,10 +28,10 @@ win.calibType               = 'HV9';
 win.margin                  = [16 8];
 
 % Blocks and trials
-win.exp_trials              = 100;%256;
+win.exp_trials              = 40;%256;
 win.t_perblock              = 20;
 win.calib_every             = 1; 
-win.trial_length            = 8;
+win.trial_length            = 6;
 % Device input during the experiment
 win.in_dev                  = 1;                                            % (1) - keyboard  (2) - mouse  (3) - pedal (?)    
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

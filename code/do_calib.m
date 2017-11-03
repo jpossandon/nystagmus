@@ -59,7 +59,7 @@ Eyelink('StartRecording');
 Eyelink('WaitForModeReady', 50); 
 Eyelink('message','SYNCTIME');  
 
-clType      = 'sample';
+clType      = 'saccade';
 cc          = 1;    cv          = 0;
 calibraw    = [];   calibsac    = [];
 n           = 1;    ns          = [1 1];
@@ -149,10 +149,14 @@ while cc < length(indxs)+1
         Screen('DrawDots', win.hndl, dotinfo.calibpos',win.dotSize*win.rect(3)/100,256,[0 0],1); % calibration dot position
     	Screen('DrawDots', win.hndl, dotinfo.calibpos',win.dotSize*win.rect(3)/100*.3,0,[0 0],1);
           
-        for ey = 1:length(calibraw)
+        for ey = 1:length(calibsac)
              if cv == 0
+                 try
                  [caldata(ey).ux,caldata(ey).uy,xyP,xyR,xgaz,ygaz] = calibdata(calibraw(ey),calibsac(ey),win,dotinfo,clType,0);
-             else
+                 catch
+                     ey
+                 end
+                 else
                  [bap,bip,bup,xyR] = calibdata(validraw(ey),validsac(ey),win,dotinfo,clType,0);      %it seems that ingoring output with a tilde does not work in windows?
              end
             
