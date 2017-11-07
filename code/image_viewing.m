@@ -216,22 +216,23 @@ for nT = 1:nTrials                                                          % lo
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
    
     % IMAGE DRAWING AND DECISION OF WHEN TO CHANGE
+        Eyelink('message','TRIALID %d', nT);                                % message about trial start in the eye-tracker
+        Eyelink('Command',...                                               % display in the eyetracker what is going on
+            'record_status_message ''Block %d Image 1 Trial %d''',b,nT);
+        ima_x   =   1;                                                      % keeps track of the image number within the block
+        Eyelink('StartRecording');
         
         Screen('FillRect', win.hndl, win.bkgcolor);                         % remove what was writte or displayed
         Screen('DrawDots', win.hndl,win.cntr ,win.dotSize*win.rect(3)/100,256,[0 0],1);
         Screen('DrawDots', win.hndl,win.cntr,win.dotSize*win.rect(3)/100*.3,0,[0 0],1);
     
         Screen('Flip', win.hndl);
-        Eyelink('WaitForModeReady', 500);
+        Eyelink('WaitForModeReady', 50);
 %         EyelinkDoDriftCorrect2(win.el,win.res(1)/2,win.res(2)/2,1)          % drift correction 
         WaitSecs(1)
         Screen('FillRect', win.hndl, win.bkgcolor);
         Screen('DrawTexture', win.hndl, postextureIndex);                   % draw the trial image
-        Eyelink('message','TRIALID %d', nT);                                % message about trial start in the eye-tracker
-        Eyelink('Command',...                                               % display in the eyetracker what is going on
-            'record_status_message ''Block %d Image 1 Trial %d''',b,nT);
-        ima_x   =   1;                                                      % keeps track of the image number within the block
-        Eyelink('StartRecording');
+       
         if nT==1
             win.el.eye_used = Eyelink('EyeAvailable');
             if win.el.eye_used==win.el.BINOCULAR,                           % (!TODO!) this I do not know yet
