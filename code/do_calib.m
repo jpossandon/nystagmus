@@ -151,11 +151,11 @@ while cc < length(indxs)+1
           
         for ey = 1:length(calibsac)
              if cv == 0
-                 try
+%                  try
                  [caldata(ey).ux,caldata(ey).uy,xyP,xyR,xgaz,ygaz] = calibdata(calibraw(ey),calibsac(ey),win,dotinfo,clType,0);
-                 catch
-                     ey
-                 end
+%                  catch
+%                      ey
+%                  end
                  else
                  [bap,bip,bup,xyR] = calibdata(validraw(ey),validsac(ey),win,dotinfo,clType,0);      %it seems that ingoring output with a tilde does not work in windows?
              end
@@ -178,7 +178,6 @@ while cc < length(indxs)+1
                     calData(ey).error(dotinfo.dot_order(p)) = sqrt((xyP(1,dotinfo.dot_order(p))-xyRP(1,dotinfo.dot_order(p))).^2+(xyP(2,dotinfo.dot_order(p))-xyRP(2,dotinfo.dot_order(p))).^2)./win.pixxdeg;
                     Screen('DrawText', win.hndl,sprintf('%2.2f',calData(ey).error(dotinfo.dot_order(p))),xyRP(1,dotinfo.dot_order(p)),xyRP(2,dotinfo.dot_order(p)),[255 255 0]);
                 end
-                % here calcualte validation errors and text it
             end
             for p = 1:size(dotinfo.dot_order,1)
                Screen('DrawText', win.hndl,num2str(dotinfo.dot_order(p)),xyP(1,dotinfo.dot_order(p)),xyP(2,dotinfo.dot_order(p)));

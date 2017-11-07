@@ -101,7 +101,9 @@ for p = 1:size(dotinfo.dot_order,1)
         text(xyR(1,dotinfo.dot_order(p)),xyR(2,dotinfo.dot_order(p)),num2str(dotinfo.dot_order(p)),'FontSize',18)
     end
 end
-
+ axis ij 
+ axis image
+ 
 ixC = [2,4,5,6,8];                                                          % calibration dots top,left,center,right,bottom are the ones used for the basic calibration equation
 A   = [ones(5,1),xyR(1,ixC)',xyR(2,ixC)',xyR(1,ixC).^2',xyR(2,ixC).^2'];
 bx  = dotinfo.calibpos(ixC,1);
@@ -120,18 +122,22 @@ xgaz    = xgazaux;
 ygaz    = ygazaux;
 
 if toplot
-    plot(xyR(1,:),xyR(2,:),'.r','MarkerSize',17)
+%     plot(xyR(1,:),xyR(2,:),'.g','MarkerSize',17)
     subplot(1,2,2),hold on
     line([0 win.rect(3)],[win.rect(4)/2 win.rect(4)/2],'LineStyle',':','Color',[1 0 0])
     line([win.rect(3)/2 win.rect(3)/2],[0 win.rect(4)],'LineStyle',':','Color',[1 0 0])
     plot(xgaz(abs(xgaz)<5000 & abs(ygaz)<5000),ygaz(abs(xgaz)<5000 & abs(ygaz)<5000),'.')
     for p = 1:size(dotinfo.dot_order,1)
-         text(xyR(1,dotinfo.dot_order(p)),xyR(2,dotinfo.dot_order(p)),num2str(dotinfo.dot_order(p)),'FontSize',18)
-          plot(xyR(1,dotinfo.dot_order(p)),xyR(2,dotinfo.dot_order(p)),'.w','MarkerSize',18)
-          plot(xyP(1,dotinfo.dot_order(p)),xyP(2,dotinfo.dot_order(p)),'.r','MarkerSize',18)
+         text(dotinfo.calibpos(dotinfo.dot_order(p),1),dotinfo.calibpos(dotinfo.dot_order(p),2),num2str(dotinfo.dot_order(p)),'FontSize',18)
+%          text(xyP(1,dotinfo.dot_order(p)),xyP(2,dotinfo.dot_order(p)),num2str(dotinfo.dot_order(p)),'FontSize',18)
+%           plot(xyR(1,dotinfo.dot_order(p)),xyR(2,dotinfo.dot_order(p)),'.k','MarkerSize',18)
+          plot(xyP(1,dotinfo.dot_order(p)),xyP(2,dotinfo.dot_order(p)),'.r','MarkerSize',24)
     end
+    rectangle('Position',[0 0 win.rect(3) win.rect(4)])
     axis ij
-    axis([0 win.rect(3) 0 win.rect(4)])
+    axis image
+    axis([0-100 win.rect(3)+100 0-100 win.rect(4)+100])
+   
 end
 % cuadrant correction, this does not work well yet
 % ixC = [1,3,7,9];
