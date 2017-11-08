@@ -104,11 +104,15 @@ end
 %  axis ij        % it seems that the eyetracker raw negative is downward
 %  so this flips wrongly the y axis
  axis image
- 
+
+% xyR = xyR-repmat(xyR(:,5),1,9) 
+
 ixC = [2,4,5,6,8];                                                          % calibration dots top,left,center,right,bottom are the ones used for the basic calibration equation
 A   = [ones(5,1),xyR(1,ixC)',xyR(2,ixC)',xyR(1,ixC).^2',xyR(2,ixC).^2'];
-bx  = dotinfo.calibpos(ixC,1);
-by  = dotinfo.calibpos(ixC,2);
+ bx  = dotinfo.calibpos(ixC,1);
+ by  = dotinfo.calibpos(ixC,2);
+%  bx  = dotinfo.calibpos(ixC,1)-win.rect(3)/2;
+%  by  = dotinfo.calibpos(ixC,2)-win.rect(4)/2;
 
 ux  = A\bx;
 uy  = A\by;
@@ -119,9 +123,11 @@ ygazaux = uy'*[ones(1,size(yraw',2));xraw';yraw';xraw'.^2;yraw'.^2];
 xyP = ux'*[ones(1,size(xyR,2));xyR(1,:);xyR(2,:);xyR(1,:).^2;xyR(2,:).^2];
 xyP = [xyP;uy'*[ones(1,size(xyR,2));xyR(1,:);xyR(2,:);xyR(1,:).^2;xyR(2,:).^2]];
 
-xgaz    = xgazaux;
-ygaz    = ygazaux;
-
+ xgaz    = xgazaux;
+ ygaz    = ygazaux;
+%xgaz    = xgazaux+win.rect(3)/2;
+%ygaz    = -(ygazaux+win.rect(4)/2);
+%xyP     = xyP+repmat(win.rect(3:4)'/2,1,9);
 if toplot
 %     plot(xyR(1,:),xyR(2,:),'.g','MarkerSize',17)
     subplot(1,2,2),hold on
