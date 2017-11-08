@@ -12,7 +12,7 @@ end
 
 %[trial,meta] = totrial('/Users/jossando/trabajo/India/data/s03/s03.edf',{'raw','gaze'});
 %[trial,meta] =totrial('/Users/jossando/trabajo/India/data/images/sanwar/sanwar.edf',{'raw','gaze'});
-tr = 1;
+tr = 22;
 if isfield(trial(tr).left,'saccade')
     useye = 'left';
 else

@@ -101,7 +101,8 @@ for p = 1:size(dotinfo.dot_order,1)
         text(xyR(1,dotinfo.dot_order(p)),xyR(2,dotinfo.dot_order(p)),num2str(dotinfo.dot_order(p)),'FontSize',18)
     end
 end
- axis ij 
+%  axis ij        % it seems that the eyetracker raw negative is downward
+%  so this flips wrongly the y axis
  axis image
  
 ixC = [2,4,5,6,8];                                                          % calibration dots top,left,center,right,bottom are the ones used for the basic calibration equation
@@ -139,13 +140,15 @@ if toplot
     axis([0-100 win.rect(3)+100 0-100 win.rect(4)+100])
    
 end
-% cuadrant correction, this does not work well yet
+%cuadrant correction, this does not work well yet
 % ixC = [1,3,7,9];
 % 
-% xi      = ux'*[ones(1,size(ixC,2));xr(ixC);yr(ixC);xr(ixC).^2;yr(ixC).^2];
-% yi      = uy'*[ones(1,size(ixC,2));xr(ixC);yr(ixC);xr(ixC).^2;yr(ixC).^2];
-% m       = (calibpos(ixC,1)'-xi)./xi./yi;
-% n       = (calibpos(ixC,2)'-yi)./xi./yi;  
+% 
+% xi      = ux'*[ones(1,size(xyR(1,ixC),2));xyR(1,ixC);xyR(2,ixC);xyR(1,ixC).^2;xyR(2,ixC).^2];
+% yi      = uy'*[ones(1,size(xyR(1,ixC),2));xyR(1,ixC);xyR(2,ixC);xyR(1,ixC).^2;xyR(2,ixC).^2];
+% % yi      = uy'*[ones(1,size(ixC,2));xr(ixC);yr(ixC);xr(ixC).^2;yr(ixC).^2];
+% m       = (dotinfo.calibpos(ixC,1)'-xi)./xi./yi;
+% n       = (dotinfo.calibpos(ixC,2)'-yi)./xi./yi;  
 %     
 % xgaz    = nan(1,length(xgazaux));
 % ygaz    = nan(1,length(ygazaux));
@@ -153,13 +156,13 @@ end
 % for i = 1:4
 %     switch ixC(i)   %cuadrants
 %         case 1
-%             auxindx = find(xgazaux<calibpos(5,1) & ygazaux<calibpos(5,2));
+%             auxindx = find(xgazaux<dotinfo.calibpos(5,1) & ygazaux<dotinfo.calibpos(5,2));
 %         case 3
-%             auxindx = find(xgazaux>calibpos(5,1) & ygazaux<calibpos(5,2));
+%             auxindx = find(xgazaux>dotinfo.calibpos(5,1) & ygazaux<dotinfo.calibpos(5,2));
 %         case 7
-%             auxindx = find(xgazaux<calibpos(5,1) & ygazaux>calibpos(5,2));
+%             auxindx = find(xgazaux<dotinfo.calibpos(5,1) & ygazaux>dotinfo.calibpos(5,2));
 %         case 9
-%             auxindx = find(xgazaux>calibpos(5,1) & ygazaux>calibpos(5,2));
+%             auxindx = find(xgazaux>dotinfo.calibpos(5,1) & ygazaux>dotinfo.calibpos(5,2));
 %     end
 %    
 %     xgaz(auxindx) = xgazaux(auxindx)+m(i).*xgazaux(auxindx).*ygazaux(auxindx);
