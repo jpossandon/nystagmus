@@ -152,12 +152,12 @@ while cc < length(indxs)+1
         for ey = 1:length(calibsac)
              if cv == 0
 %                  try
-                 [caldata(ey).ux,caldata(ey).uy,xyP,xyR,xgaz,ygaz] = calibdata(calibraw(ey),calibsac(ey),win,dotinfo,clType,0);
+                 [caldata(ey).ux,caldata(ey).uy,caldata(ey).xyP,caldata(ey).xyR,xgaz,ygaz] = calibdata(calibraw(ey),calibsac(ey),win,dotinfo,clType,0);
 %                  catch
 %                      ey
 %                  end
                  else
-                 [bap,bip,bup,xyR] = calibdata(validraw(ey),validsac(ey),win,dotinfo,clType,0);      %it seems that ingoring output with a tilde does not work in windows?
+                 [bap,bip,bup,caldata(ey).xyR] = calibdata(validraw(ey),validsac(ey),win,dotinfo,clType,0);      %it seems that ingoring output with a tilde does not work in windows?
              end
             
             if ey == 1, col = [0 0 256];, else col = [256 0 0];,end
@@ -166,21 +166,21 @@ while cc < length(indxs)+1
                 Screen('DrawDots', win.hndl, [xgaz;ygaz],6,col,[0 0],0);                                % corrected data
             end
             % corrected calibration positions
-            Screen('DrawDots', win.hndl, xyP,win.dotSize/2*win.rect(3)/100,col,[0 0],1);              
-    	    Screen('DrawDots', win.hndl, xyP,win.dotSize/2*win.rect(3)/100*.3,0,[0 0],1);
+            Screen('DrawDots', win.hndl, caldata(ey).xyP,win.dotSize/2*win.rect(3)/100,col,[0 0],1);              
+    	    Screen('DrawDots', win.hndl, caldata(ey).xyP,win.dotSize/2*win.rect(3)/100*.3,0,[0 0],1);
             if cv == 1
-                xyRP = caldata(ey).ux'*[ones(1,size(xyR,2));xyR(1,:);xyR(2,:);xyR(1,:).^2;xyR(2,:).^2];
-                xyRP = [xyRP;caldata(ey).uy'*[ones(1,size(xyR,2));xyR(1,:);xyR(2,:);xyR(1,:).^2;xyR(2,:).^2]];
+                xyRP = caldata(ey).ux'*[ones(1,size(caldata(ey).xyR,2));caldata(ey).xyR(1,:);caldata(ey).xyR(2,:);caldata(ey).xyR(1,:).^2;caldata(ey).xyR(2,:).^2];
+                xyRP = [xyRP;caldata(ey).uy'*[ones(1,size(caldata(ey).xyR,2));caldata(ey).xyR(1,:);caldata(ey).xyR(2,:);caldata(ey).xyR(1,:).^2;caldata(ey).xyR(2,:).^2]];
                 Screen('DrawDots', win.hndl, xyRP,win.dotSize/2*win.rect(3)/100,col,[0 0],0);              
                 Screen('DrawDots', win.hndl, xyRP,win.dotSize/2*win.rect(3)/100*.3,0,[0 0],0);
-                Screen('DrawLines',win.hndl, reshape([xyP;xyRP],2,18),2,255,[0 0]);
+                Screen('DrawLines',win.hndl, reshape([caldata(ey).xyP;xyRP],2,18),2,255,[0 0]);
                 for p = 1:size(dotinfo.dot_order,1)
-                    calData(ey).error(dotinfo.dot_order(p)) = sqrt((xyP(1,dotinfo.dot_order(p))-xyRP(1,dotinfo.dot_order(p))).^2+(xyP(2,dotinfo.dot_order(p))-xyRP(2,dotinfo.dot_order(p))).^2)./win.pixxdeg;
+                    calData(ey).error(dotinfo.dot_order(p)) = sqrt((caldata(ey).xyP(1,dotinfo.dot_order(p))-xyRP(1,dotinfo.dot_order(p))).^2+(caldata(ey).xyP(2,dotinfo.dot_order(p))-xyRP(2,dotinfo.dot_order(p))).^2)./win.pixxdeg;
                     Screen('DrawText', win.hndl,sprintf('%2.2f',calData(ey).error(dotinfo.dot_order(p))),xyRP(1,dotinfo.dot_order(p)),xyRP(2,dotinfo.dot_order(p)),[255 255 0]);
                 end
             end
             for p = 1:size(dotinfo.dot_order,1)
-               Screen('DrawText', win.hndl,num2str(dotinfo.dot_order(p)),xyP(1,dotinfo.dot_order(p)),xyP(2,dotinfo.dot_order(p)));
+               Screen('DrawText', win.hndl,num2str(dotinfo.dot_order(p)),caldata(ey).xyP(1,dotinfo.dot_order(p)),caldata(ey).xyP(2,dotinfo.dot_order(p)));
             end
         end
         if cv == 0
