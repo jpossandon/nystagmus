@@ -28,7 +28,7 @@ win.calibType               = 'HV9';
 win.margin                  = [16 8];
 
 % Blocks and trials
-win.exp_trials              = 40;%256;
+win.exp_trials              = 80;%256;
 win.t_perblock              = 20;
 win.calib_every             = 1; 
 win.trial_length            = 6;
@@ -168,16 +168,24 @@ betweenFolder = reshape([[folderFace(1:5);folderHouse(1:5)],[folderHouse(1:5);fo
 SwithinImage  = [reshape(repmat(images,2,1),1,length(images)*2),reshape(repmat(images,2,1),1,length(images)*2)];
 DwithinImage  = [randsample(images,length(images)),randsample(images,length(images))];
 DbetweenImage = reshape([randsample(images,length(images));randsample(images,length(images))],1,length(images)*2);
+images        = [SwithinImage,DwithinImage,DbetweenImage];
+folders       = [withinFolder,withinFolder,betweenFolder];
+ttype         = [ones(1,length(SwithinImage)),2.*ones(1,length(DwithinImage)),3.*ones(1,length(DbetweenImage))]                                             % 1 - SW 2 - DW 3 - DB 
 
-win.image_rnd     = randsample(1:40,40);
-win.image         = images(win.image_rnd);
-win.im_folder     = folders(win.image_rnd);
+win.image_rnd     = randsample(1:2:win.exp_trials,win.exp_trials/2);
+win.image         = reshape([images(win.image_rnd);images(win.image_rnd+1)],1,win.exp_trials);
+win.im_folder     = reshape([folders(win.image_rnd);folders(win.image_rnd+1)],1,win.exp_trials);
+win.ttype         = reshape([ttype(win.image_rnd);ttype(win.image_rnd+1)],1,win.exp_trials);
+win.pairOrder     = repmat([1,2],1,win.exp_trials/2);
 nBlocks           = win.exp_trials./win.t_perblock;                       % # experimental block without counting the first test one
 nTrials           = win.exp_trials+nBlocks;                       % Total # of trial
 win.block_start   = repmat([1,zeros(1,win.t_perblock)],1,nBlocks);
 win.image         = reshape([nan(1,nBlocks);reshape(win.image,win.t_perblock,nBlocks)],1,[]);
 win.im_folder     = reshape([nan(1,nBlocks);reshape(win.im_folder,win.t_perblock,nBlocks)],1,[]);
-win.image_rnd     = reshape([nan(1,nBlocks);reshape(win.image_rnd,win.t_perblock,nBlocks)],1,[]);
+win.ttype         = reshape([nan(1,nBlocks);reshape(win.ttype,win.t_perblock,nBlocks)],1,[]);
+win.pairOrder     = reshape([nan(1,nBlocks);reshape(win.pairOrder,win.t_perblock,nBlocks)],1,[]);
+
+%win.image_rnd     = reshape([nan(1,nBlocks);reshape(win.image_rnd,win.t_perblock,nBlocks)],1,[]);
 
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -270,9 +278,13 @@ for nT = 1:nTrials                                                          % lo
      Eyelink('WaitForModeReady', 50);
     Eyelink('message','METATR image %d',win.image(nT));               % we send relevant information to the eye-tracker file, here which image
     Eyelink('WaitForModeReady', 50);
-    Eyelink('message','METATR randn %d',win.image_rnd(nT));               % we send relevant information to the eye-tracker file, here which image
-    Eyelink('WaitForModeReady', 50);
+%     Eyelink('message','METATR randn %d',win.image_rnd(nT));               % we send relevant information to the eye-tracker file, here which image
+%     Eyelink('WaitForModeReady', 50);
     Eyelink('message','METATR block_start %d',win.block_start(nT));         % if it was the first image in the block
+    Eyelink('WaitForModeReady', 50);
+    Eyelink('message','METATR pair_order %d',win.pairOrder(nT));         % if it was the first image in the block
+    Eyelink('WaitForModeReady', 50);
+    Eyelink('message','METATR ttype %d',win.ttype(nT));         % if it was the first image in the block
    
     while GetSecs<tstart+win.trial_length                           % lopp until trials finishes
        continue
@@ -280,7 +292,24 @@ for nT = 1:nTrials                                                          % lo
     
     Eyelink('StopRecording');
     Eyelink('WaitForModeReady', 50);
-
+    
+    if win.pairOrder(nT)==2
+       Screen('DrawText', win.hndl, 'SAME (S)    DIFFERENT (D)', 400, 400, 255);
+       Screen('Flip', win.hndl); 
+        while 1
+            [keyIsDown,seconds,keyCode] = KbCheck;
+             if keyIsDown
+                if keyCode(KbName('S')) 
+                    win.result(nT) = 1;
+                    break
+                end
+                if keyCode(KbName('D')) 
+                    win.result(nT) = 2;
+                    break
+                end
+             end
+        end
+    end
 end
 win.end_time = clock;
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
