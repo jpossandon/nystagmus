@@ -147,27 +147,8 @@ ListenChar(2)                                                               % di
 % 28 (butteflies,9) 29 (faces,11) 30 (houses,11) 31 (scrambled faces, 11)
 % 32 (scrambled houses, 11), 33 (inverted faces, 11), 34 (inverted houses, 11)
 %
-% Pilot Task Nov-2017
-% Images presentend in pair 6s-1s-6s
-% Same or different?
-%
-% Randomization :
-% same-whithin normal  10 faces and 10 house trial (20 diff images,40 images)
-% different-within normal, 5 faces 5 house trial (20 diff images,total 20)
-% different-between normal, 10 mis trial (20 diff images, total 20)
-
-%folders = [repmat(8,1,47),repmat(28,1,9),repmat(29,1,11),repmat(30,1,11),repmat(31,1,11),repmat(32,1,11)];
-%images  = [1:47,1:9,1:11,1:11,1:11,1:11];
-
-folderFace  = repmat(29,1,10);
-folderHouse = repmat(30,1,10);
-images      = 1:10;
-
-withinFolder  = [repmat(folderFace,1,2),repmat(folderHouse,1,2)];
-betweenFolder = reshape([[folderFace(1:5);folderHouse(1:5)],[folderHouse(1:5);folderFace(1:5)]],1,length(folderFace)+length(folderHouse));
-SwithinImage  = [reshape(repmat(images,2,1),1,length(images)*2),reshape(repmat(images,2,1),1,length(images)*2)];
-DwithinImage  = [randsample(images,length(images)),randsample(images,length(images))];
-DbetweenImage = reshape([randsample(images,length(images));randsample(images,length(images))],1,length(images)*2);
+folders = [repmat(8,1,47),repmat(28,1,9),repmat(29,1,11),repmat(30,1,11),repmat(31,1,11),repmat(32,1,11)];
+images  = [1:47,1:9,1:11,1:11,1:11,1:11];
 
 win.image_rnd     = randsample(1:40,40);
 win.image         = images(win.image_rnd);
