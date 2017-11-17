@@ -10,8 +10,8 @@
 
 % clear all                                                                 % we clear parameters?
 % this is for debugging
-win.DoDummyMode             = 1;                                            % (1) is for debugging without an eye-tracker, (0) is for running the experiment
-PsychDebugWindowConfiguration(0.5);%0.7);                                       % this is for debugging with a single screen
+win.DoDummyMode             = 0;                                            % (1) is for debugging without an eye-tracker, (0) is for running the experiment
+%PsychDebugWindowConfiguration(0.5);%0.7);                                       % this is for debugging with a single screen
 
 % Screen parameters
 
@@ -25,6 +25,7 @@ win.hght                    = 28.7;                                         %
 win.pixxdeg                 = win.res(1)/(2*180/pi*atan(win.wdth/2/win.Vdst));% 
 win.dotSize                 = 3; % [% of window width]
 win.calibType               = 'HV9';
+win.calibration_type        = 'saccade';
 win.margin                  = [16 8];
 
 % Blocks and trials
@@ -42,7 +43,8 @@ win.in_dev                  = 1;                                            % (1
 if ismac                                                                    % this bit is just so I can run the experiment in my mac without a problem
     exp_path                = '/Users/jossando/trabajo/India/';              % path in my mac
 else
-    exp_path                = 'C:\Users\bpn\Documents\jpossandon\nystagmus\';
+%     exp_path                = 'C:\Users\bpn\Documents\jpossandon\nystagmus\';
+    exp_path                = 'C:\users\patcou\Desktop\freeviewing\';
 end
 
 win.s_n                     = input('Subject number: ','s');                % subject id number, this number is used to open the randomization file
@@ -61,7 +63,7 @@ win.s_gender                = input('Subject gender (m/f): ','s');
 setStr                      = sprintf('Subject %d\nAge %s\nHandedness %s\nGender %s\n',win.s_n,win.s_age,win.s_hand,win.s_gender); % setting summary
 fprintf(setStr); 
 
-AssertOpenGL();                                                             % check if Psychtoolbox is working (with OpenGL) TODO: is this needed?
+% AssertOpenGL();                                                             % check if Psychtoolbox is working (with OpenGL) TODO: is this needed?
 ClockRandSeed();                                                            % this changes the random seed
 
 [IsConnected, IsDummy] = EyelinkInit(win.DoDummyMode);                      % open the link with the eyetracker
@@ -194,7 +196,7 @@ for nT = 1:nTrials                                                          % lo
             EyelinkDoTrackerSetup(win.el);
 
         
-%         caldata = do_calib(win,nT);
+         caldata = do_calib(win,nT);
         
         Screen('Flip', win.hndl);
          continue
@@ -224,8 +226,17 @@ for nT = 1:nTrials                                                          % lo
         Eyelink('StartRecording');
         
         Screen('FillRect', win.hndl, win.bkgcolor);                         % remove what was writte or displayed
-        Screen('DrawDots', win.hndl,win.cntr ,win.dotSize*win.rect(3)/100,256,[0 0],1);
-        Screen('DrawDots', win.hndl,win.cntr,win.dotSize*win.rect(3)/100*.3,0,[0 0],1);
+%         Screen('DrawDots', win.hndl,win.cntr ,win.dotSize*win.rect(3)/100,256,[0 0],1);
+%         Screen('DrawDots', win.hndl,win.cntr,win.dotSize*win.rect(3)/100*.3,0,[0 0],1);
+    
+         dotrect1 = [0 0 win.dotSize*win.rect(3)/100 win.dotSize*win.rect(3)/100];
+         dotrect1 = CenterRectOnPoint(dotrect1, win.cntr(1),win.cntr(2) );
+         dotrect2 = [0 0 win.dotSize*win.rect(3)/100*.3 win.dotSize*win.rect(3)/100*.3];
+         dotrect2 = CenterRectOnPoint(dotrect2, win.cntr(1),win.cntr(2) );
+    
+        Screen('FillOval', win.hndl, 255, dotrect1);
+        Screen('FillOval', win.hndl, 0, dotrect2);
+    
     
         Screen('Flip', win.hndl);
         Eyelink('WaitForModeReady', 50);

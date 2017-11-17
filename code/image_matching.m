@@ -7,11 +7,11 @@
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % EXPERIMENT PARAMETERS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+clear
 % clear all                                                                 % we clear parameters?
 % this is for debugging
-win.DoDummyMode             = 1;                                            % (1) is for debugging without an eye-tracker, (0) is for running the experiment
-PsychDebugWindowConfiguration(0.5);%0.7);                                       % this is for debugging with a single screen
+win.DoDummyMode             = 0;                                            % (1) is for debugging without an eye-tracker, (0) is for running the experiment
+% PsychDebugWindowConfiguration(0.5);%0.7);                                       % this is for debugging with a single screen
 
 % Screen parameters
 
@@ -19,13 +19,13 @@ win.whichScreen             = 0;                                            % (C
 win.FontSZ                  = 20;                                           % font size
 win.bkgcolor                = 0;                                          % screen background color, 127 gray
 win.Vdst                    = 66;                                           % (!CHANGE!) viewer's distance from screen [cm]         
-win.res                     = [1920 1080];%[1366 768];                                  %  horizontal x vertical resolution [pixels]
-win.wdth                    = 51;                                           %  51X28.7 cms is teh size of Samsung Syncmaster P2370 in BPN lab EEG rechts
-win.hght                    = 28.7;                                         % 
-win.pixxdeg                 = win.res(1)/(2*180/pi*atan(win.wdth/2/win.Vdst));% 
-win.dotSize                 = 3; % [% of window width]
+win.wdth                    = 42;%51;                                           %  51X28.7 cms is teh size of Samsung Syncmaster P2370 in BPN lab EEG rechts
+win.hght                    = 23;%28.7;                                         % 42x23 is HP screen in eyetrackin clinic
+win.dotSize                 = 4; % [% of window width]
 win.calibType               = 'HV9';
-win.margin                  = [16 8];
+win.calibration_type        = 'saccade';
+win.dotflickfreq            = 5;                                          % Hz
+win.margin                  = [20 16];
 
 % Blocks and trials
 win.exp_trials              = 80;%256;
@@ -42,7 +42,9 @@ win.in_dev                  = 1;                                            % (1
 if ismac                                                                    % this bit is just so I can run the experiment in my mac without a problem
     exp_path                = '/Users/jossando/trabajo/India/';              % path in my mac
 else
-    exp_path                = 'C:\Users\bpn\Documents\jpossandon\nystagmus\';
+%     exp_path                = 'C:\Users\bpn\Documents\jpossandon\nystagmus\';
+       exp_path                = 'C:\users\patcou\Desktop\freeviewing\';
+
 end
 
 win.s_n                     = input('Subject number: ','s');                % subject id number, this number is used to open the randomization file
@@ -54,6 +56,7 @@ if exist([pathEDF win.fnameEDF],'file')                                         
         error('filename already exist')
     end
 end
+mkdir(pathEDF)
 
 win.s_age                   = input('Subject age: ','s');
 win.s_hand                  = input('Subject handedness for writing (l/r): ','s');
@@ -63,30 +66,37 @@ fprintf(setStr);
 
 AssertOpenGL();                                                             % check if Psychtoolbox is working (with OpenGL) TODO: is this needed?
 ClockRandSeed();                                                            % this changes the random seed
+commandwindow;
 
-[IsConnected, IsDummy] = EyelinkInit(win.DoDummyMode);                      % open the link with the eyetracker
-assert(IsConnected==1, 'Failed to initialize EyeLink!')
+% [IsConnected, IsDummy] = EyelinkInit(win.DoDummyMode);                      % open the link with the eyetracker
+% assert(IsConnected==1, 'Failed to initialize EyeLink!')
  
 % ListenChar(2)                                                             % disable key listening by MATLAB windows(CTRL+C overridable)
 
 prevVerbos = Screen('Preference','Verbosity', 2);                           % this two lines it to set how much we want the PTB to output in the command and display window 
-prevVisDbg = Screen('Preference','VisualDebugLevel',3);                     % verbosity-1 (default 3); vdbg-2 (default 4)
-Screen('Preference', 'SkipSyncTests', 2)                                    % for maximum accuracy and reliability
+prevVisDbg = Screen('Preference','VisualDebugLevel',0);                     % verbosity-1 (default 3); vdbg-2 (default 4)
+Screen('Preference', 'SkipSyncTests', 0)                                    % for maximum accuracy and reliability
+
+
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % START PTB SCREEN
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 [win.hndl, win.rect]        = Screen('OpenWindow',win.whichScreen,win.bkgcolor);   % starts PTB screen
+Priority(MaxPriority(win.hndl));
 % if win.rect(3)~=1280 || win.rect(4)~=960                                    % (!CHANGE!) if resolution is not the correct one the experiment stops
 %     sca
 %     Eyelink('Shutdown');       % closes the link to the eye-tracker
 %     fclose(obj);               % closes the serial port
 %     error('Screen resolution must be 1280x960')
 % end
+win.res                     = win.rect(3:4);%[1366 768];%[1920 1080];%                                  %  horizontal x vertical resolution [pixels]
+win.pixxdeg                 = win.res(1)/(2*180/pi*atan(win.wdth/2/win.Vdst));% 
+
 [win.cntr(1), win.cntr(2)] = WindowCenter(win.hndl);                        % get where is the display screen center
 Screen('BlendFunction',win.hndl, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);     % enable alpha blending for smooth drawing
-HideCursor(win.hndl);                                                       % this to hide the mouse
+% HideCursor(win.hndl);                                                       % this to hide the mouse
 Screen('TextSize', win.hndl, win.FontSZ);                                   % sets teh font size of the text to be diplayed
 KbName('UnifyKeyNames');                                                    % recommended, called again in EyelinkInitDefaults
 win.start_time = clock;
@@ -123,7 +133,7 @@ Eyelink('Command', sprintf('add_file_preamble_text ''%s''', setStr));       % th
 wrect = Screen('Rect', win.hndl);                                           
 Eyelink('Message','DISPLAY_COORDS %d %d %d %d', 0, 0, wrect(1), wrect(2));  % write display resolution to EDF file
 
-ListenChar(2)                                                               % disable MATLAB windows' keyboard listen (no unwanted edits)
+%ListenChar(2)                                                               % disable MATLAB windows' keyboard listen (no unwanted edits)
 
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -169,8 +179,8 @@ SwithinImage  = [reshape(repmat(images,2,1),1,length(images)*2),reshape(repmat(i
 DwithinImage  = [randsample(images,length(images)),randsample(images,length(images))];
 DbetweenImage = reshape([randsample(images,length(images));randsample(images,length(images))],1,length(images)*2);
 images        = [SwithinImage,DwithinImage,DbetweenImage];
-folders       = [withinFolder,withinFolder,betweenFolder];
-ttype         = [ones(1,length(SwithinImage)),2.*ones(1,length(DwithinImage)),3.*ones(1,length(DbetweenImage))]                                             % 1 - SW 2 - DW 3 - DB 
+folders       = [withinFolder,withinFolder(1:2:end),betweenFolder];
+ttype         = [ones(1,length(SwithinImage)),2.*ones(1,length(DwithinImage)),3.*ones(1,length(DbetweenImage))];                                             % 1 - SW 2 - DW 3 - DB 
 
 win.image_rnd     = randsample(1:2:win.exp_trials,win.exp_trials/2);
 win.image         = reshape([images(win.image_rnd);images(win.image_rnd+1)],1,win.exp_trials);
@@ -221,7 +231,7 @@ for nT = 1:nTrials                                                          % lo
             EyelinkDoTrackerSetup(win.el);
 
         
-%         caldata = do_calib(win,nT);
+         caldata = do_calib(win,nT);
         
         Screen('Flip', win.hndl);
          continue
@@ -251,9 +261,14 @@ for nT = 1:nTrials                                                          % lo
         Eyelink('StartRecording');
         
         Screen('FillRect', win.hndl, win.bkgcolor);                         % remove what was writte or displayed
-        Screen('DrawDots', win.hndl,win.cntr ,win.dotSize*win.rect(3)/100,256,[0 0],1);
-        Screen('DrawDots', win.hndl,win.cntr,win.dotSize*win.rect(3)/100*.3,0,[0 0],1);
+        dotrect1 = [0 0 win.dotSize*win.rect(3)/100 win.dotSize*win.rect(3)/100];
+        dotrect1 = CenterRectOnPoint(dotrect1, win.cntr(1),win.cntr(2) );
+        dotrect2 = [0 0 win.dotSize*win.rect(3)/100*.3 win.dotSize*win.rect(3)/100*.3];
+        dotrect2 = CenterRectOnPoint(dotrect2, win.cntr(1),win.cntr(2) );
     
+        Screen('FillOval', win.hndl, 255, dotrect1);
+        Screen('FillOval', win.hndl, 0, dotrect2);
+        
         Screen('Flip', win.hndl);
         Eyelink('WaitForModeReady', 50);
 %         EyelinkDoDriftCorrect2(win.el,win.res(1)/2,win.res(2)/2,1)          % drift correction 

@@ -48,7 +48,7 @@ traw = samples.time' ;
 % At the moment only taking the median position, we can implement later
 % that it takes only in account position after a saccade (~fast period of the nystagmus)
 
-rawdataLimit = 30000; % absolute limit in raw units 
+rawdataLimit = 50000; % absolute limit in raw units 
 if toplot
     figure
     set(gcf,'Position',[33 171 1147 534])
@@ -99,11 +99,12 @@ for p = 1:size(dotinfo.dot_order,1)
         plot(xraw(aux_calib),yraw(aux_calib))
         plot(xraw(aux_saccT),yraw(aux_saccT),'.r','MarkerSize',24)
         text(xyR(1,dotinfo.dot_order(p)),xyR(2,dotinfo.dot_order(p)),num2str(dotinfo.dot_order(p)),'FontSize',18)
+        axis image
     end
 end
 %  axis ij        % it seems that the eyetracker raw negative is downward
 %  so this flips wrongly the y axis
- axis image
+
 
 % xyR = xyR-repmat(xyR(:,5),1,9) 
 
