@@ -1,4 +1,4 @@
-function caldata = do_calib(win,TRIALID)
+function [caldata,debug] = do_calib(win,TRIALID,dummy)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % do_calib(win,TRIALID)
 % 
@@ -52,15 +52,16 @@ end
 Screen('FillRect', win.hndl, win.bkgcolor);                                 % remove what was written or displayed
 Screen('Flip', win.hndl);
 
-Eyelink('Command',...                                                       % display in the eyetracker what is going on
-            'record_status_message ''Custom Calibration Trial %d''',TRIALID);
-Eyelink('WaitForModeReady', 50);      
-Eyelink('message','TRIALID %d', TRIALID);                                   % message about trial start in the eye-tracker
-Eyelink('WaitForModeReady', 50); 
-Eyelink('StartRecording');
-Eyelink('WaitForModeReady', 50); 
-Eyelink('message','SYNCTIME');  
-
+if ~dummy
+    Eyelink('Command',...                                                       % display in the eyetracker what is going on
+                'record_status_message ''Custom Calibration Trial %d''',TRIALID);
+    Eyelink('WaitForModeReady', 50);      
+    Eyelink('message','TRIALID %d', TRIALID);                                   % message about trial start in the eye-tracker
+    Eyelink('WaitForModeReady', 50); 
+    Eyelink('StartRecording');
+    Eyelink('WaitForModeReady', 50); 
+    Eyelink('message','SYNCTIME');  
+end
 
 % cc is current calibration dot?
 % validation_flag  
@@ -75,7 +76,9 @@ nv          = 1;    nsv         = [1 1];
 dotrectOut = [0 0 win.dotSize*win.rect(3)/100 win.dotSize*win.rect(3)/100];
 dotrectIn = [0 0 win.dotSize*win.rect(3)/100*.3 win.dotSize*win.rect(3)/100*.3];
 
-cmap = repmat(colormap(HSV(20)),20,1);                                     % colors for cyling dot color, this could be a beter selection
+% load colormap into cmap
+load('hsvcolormap')
+
 while cc_dot < length(indxs)+1        
     % plots the respective calibration dot
     
@@ -85,17 +88,24 @@ while cc_dot < length(indxs)+1
     Screen('FillOval', win.hndl, 0, dotrect2);
 
     last_dotTime = Screen('Flip', win.hndl);                                % last_dotTime for an easy flickering 
-    Eyelink('message','METATR dotpos %d',indxs(cc_dot));                    % position of the calibration dot of next data as an index
     
-    % get aprox time of dot appearance in eyetracker time
-    status = 1;
-    while status
-        status = Eyelink('RequestTime');
+    if ~dummy
+        Eyelink('message','METATR dotpos %d',indxs(cc_dot));                    % position of the calibration dot of next data as an index
+    
+        % get aprox time of dot appearance in eyetracker time
+        status = 1;
+        while status
+            status = Eyelink('RequestTime');
+        end
+        Eyelink('WaitForModeReady', 50);
+
+        % order and time of presenting the calibration dot, we are saving
+        % always only the timing of the last dot presented for a given position
+        dotinfo.tstart_dots(cc_dot)   = Eyelink('ReadTime');
+    else
+        dotinfo.tstart_dots(cc_dot)   = GetSecs*1000;
     end
-    Eyelink('WaitForModeReady', 50);
-    % order and time of presenting the calibration dot, we are saving
-    % always only the timing of the last dot presented for a given position
-    dotinfo.tstart_dots(cc_dot)   = Eyelink('ReadTime');
+    
     if validation_flag == 0
         dotinfo.dot_order(cc_dot,1)   = indxs(cc_dot);
     end
@@ -112,7 +122,7 @@ while cc_dot < length(indxs)+1
                 %showandSelect(win,calibraw,calibsac,dotinfo(cc_dot)); here we will plot and select but too tired today
                 cc_dot = cc_dot+1;
                 break;
-            elseif keyCode(KbName('DELETE')) || keyCode(KbName('BackSpace'))   % DELETE and BACKSPACE?
+            elseif keyCode(KbName('BackSpace'))   % DELETE and BACKSPACE?
                 cc_dot = cc_dot-1;
                 if cc_dot==0
                     cc_dot=1;
@@ -122,8 +132,18 @@ while cc_dot < length(indxs)+1
             
          end
 
-        [data,type] = get_ETdataraw;                                      % this is to get data online to estimate calibration coefficients with calibdata and be able to do gaze contingent experiments              
-        
+        if ~dummy
+            [data,type] = get_ETdataraw;                                      % this is to get data online to estimate calibration coefficients with calibdata and be able to do gaze contingent experiments              
+        else        
+            [mx, my]  = GetMouse(win.hndl);
+            data.time = GetSecs*1000;
+            data.px   = [mx+rand*100 mx+100+rand*100];
+            data.py   = [my+rand*100 my+100+rand*100];
+            data.pa   = [1 1];
+            type      = 200;
+        end
+
+
         if type==200   % samples
             for ey = 1:size(data.px,2)
                 if validation_flag == 0
@@ -167,6 +187,8 @@ while cc_dot < length(indxs)+1
         Screen('FillOval', win.hndl, 0, dotrect2);
         Screen('Flip', win.hndl);
 %         WaitSecs(0.00001);
+
+
      end
     while KbCheck; end
 
@@ -176,14 +198,29 @@ while cc_dot < length(indxs)+1
         Screen('DrawDots', win.hndl, dotinfo.calibpos',win.dotSize*win.rect(3)/100/3,256,[0 0],1); % calibration dot position
     	Screen('DrawDots', win.hndl, dotinfo.calibpos',win.dotSize*win.rect(3)/100*.3/3,0,[0 0],1);
 
-        for ey = 1:length(calibsac)    % loop through eyes that got saccade data
+        if ~dummy   
+            if strcmp(win.calibration_type,'saccade');
+                eyes_with_sacc_data=length(calibsac);
+            else          
+%%%!!!!                
+                eyes_with_sacc_data=2; %%%!!! does this work?
+            end
+        else
+            eyes_with_sacc_data=2;
+            calibsac=[1 1];
+            validsac=[1 1];
+        end
+        
+
+        for ey = 1:eyes_with_sacc_data    % loop through eyes that got saccade data
             if validation_flag == 0
                 % this is the calibration calculation, ux and uy are used
                 % to correct data, and to correct the validation
-                [caldata(ey).ux,caldata(ey).uy,caldata(ey).correctedDotPos,caldata(ey).uncorrectedDotPos,xgaz,ygaz] = calibdata(calibraw(ey),calibsac(ey),win,dotinfo,clType,0);
+                [caldata(ey).ux,caldata(ey).uy,caldata(ey).correctedDotPos,caldata(ey).uncorrectedDotPos,xgaz,ygaz,debug] = calibdata(calibraw(ey),calibsac(ey),win,dotinfo,clType,0);
+            
             else
                 % for validation calibdata is colled only to get the uncorrected positions 
-                [bap,bip,bup,uncorrectedDotPos] = calibdata(validraw(ey),validsac(ey),win,dotinfo,clType,0);      %it seems that ingoring output with a tilde does not work in windows?
+                [bap,bip,bup,uncorrectedDotPos,debug] = calibdata(validraw(ey),validsac(ey),win,dotinfo,clType,0);      %it seems that ingoring output with a tilde does not work in windows?
             end
             
             % LEFT EYE IS BLUE... RIGHT EYE IS RED
@@ -196,6 +233,7 @@ while cc_dot < length(indxs)+1
 %             Screen('DrawDots', win.hndl, caldata(ey).correctedDotPos,win.dotSize/2*win.rect(3)/100/3,col,[0 0],1);              
 %     	    Screen('DrawDots', win.hndl, caldata(ey).correctedDotPos,win.dotSize/2*win.rect(3)/100*.3/3,0,[0 0],1);
             if validation_flag == 1
+                ey
                 % the uncorrectedDotPos from the validation are corrected
                 % with the coefficients obtained during the calibration
                 correctedValidationPos = caldata(ey).ux'*[ones(1,size(uncorrectedDotPos,2));uncorrectedDotPos(1,:);uncorrectedDotPos(2,:);uncorrectedDotPos(1,:).^2;uncorrectedDotPos(2,:).^2];
@@ -206,24 +244,28 @@ while cc_dot < length(indxs)+1
                 % draw a line between the absolute position of the
                 % calibration dot and the validation position
                 Screen('DrawLines',win.hndl, reshape([dotinfo.calibpos';correctedValidationPos],2,18),2,255,[0 0]);
-                for p = 1:size(dotinfo.dot_order,1)
-                    calData(ey).error(dotinfo.dot_order(p)) = sqrt((dotinfo.calibpos(dotinfo.dot_order(p),1)-correctedValidationPos(1,dotinfo.dot_order(p))).^2+(dotinfo.calibpos(dotinfo.dot_order(p),2)-correctedValidationPos(2,dotinfo.dot_order(p))).^2)./win.pixxdeg;
-                    Screen('DrawText', win.hndl,sprintf('%2.2f',calData(ey).error(dotinfo.dot_order(p))),correctedValidationPos(1,dotinfo.dot_order(p)),correctedValidationPos(2,dotinfo.dot_order(p)),[255 255 0]);
+                for pt = 1:size(dotinfo.dot_order,1)
+                    calData(ey).error(dotinfo.dot_order(pt)) = sqrt((dotinfo.calibpos(dotinfo.dot_order(pt),1)-correctedValidationPos(1,dotinfo.dot_order(pt))).^2+(dotinfo.calibpos(dotinfo.dot_order(pt),2)-correctedValidationPos(2,dotinfo.dot_order(pt))).^2)./win.pixxdeg;
+                    Screen('DrawText', win.hndl,sprintf('%2.2f',calData(ey).error(dotinfo.dot_order(pt))),correctedValidationPos(1,dotinfo.dot_order(pt)),correctedValidationPos(2,dotinfo.dot_order(pt)),[255 255 0]);
                 end
             end
-            for p = 1:size(dotinfo.dot_order,1)
-               Screen('DrawText', win.hndl,num2str(dotinfo.dot_order(p)),caldata(ey).correctedDotPos(1,dotinfo.dot_order(p)),caldata(ey).correctedDotPos(2,dotinfo.dot_order(p)));
+            for pt = 1:size(dotinfo.dot_order,1)
+               Screen('DrawText', win.hndl,num2str(dotinfo.dot_order(pt)),caldata(ey).correctedDotPos(1,dotinfo.dot_order(pt)),caldata(ey).correctedDotPos(2,dotinfo.dot_order(pt)));
             end
-        caldata(ey).calibraw = calibraw(ey);
-        caldata(ey).calibsac = calibsac(ey);
-        caldata(ey).dotinfo  = dotinfo;
+            
+            % save data
+            caldata(ey).calibraw = calibraw(ey);
+            caldata(ey).calibsac = calibsac(ey);
+            caldata(ey).dotinfo  = dotinfo;
+            caldata(ey).validraw  = dotinfo;
+        
         end
         if validation_flag == 0
             Screen('DrawText', win.hndl, 'CONTINUE TO VALIDATION (V)     REPEAT CALIBRATION (C)     CONTINUE EXP(SPACE)', win.rect(3)*.1, 400, 255);
         else
             Screen('DrawText', win.hndl, 'ACCEPT VALIDATION (SPACE)    REPEAT VALIDATION (V)    REPEAT CALIBRATION (C)', win.rect(3)*.1, 400, 255);
         end
-            Screen('Flip', win.hndl);
+        Screen('Flip', win.hndl);
     
         while 1
             [keyIsDown,seconds,keyCode] = KbCheck;
@@ -251,6 +293,9 @@ while cc_dot < length(indxs)+1
     
 end
 
-Eyelink('StopRecording');
+if ~dummy
+    Eyelink('StopRecording');
+end
 
+end
 %ShowHideWinTaskbarMex(1)

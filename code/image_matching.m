@@ -7,6 +7,13 @@
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % EXPERIMENT PARAMETERS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if exist('minDesktop')
+    if minDesktop ==1
+        desktop = com.mathworks.mde.desk.MLDesktop.getInstance();
+        mf = desktop.getMainFrame();
+        mf.setMinimized(true);
+    end
+end
 clear
 % clear all                                                                 % we clear parameters?
 % this is for debugging
@@ -23,7 +30,7 @@ win.wdth                    = 42;%51;                                           
 win.hght                    = 23;%28.7;                                         % 42x23 is HP screen in eyetrackin clinic
 win.dotSize                 = 4; % [% of window width]
 win.calibType               = 'HV9';
-win.calibration_type        = 'saccade';
+win.calibration_type        = 'sample';
 win.dotflickfreq            = 5;                                          % Hz
 win.margin                  = [20 16];
 
@@ -46,8 +53,14 @@ else
        exp_path                = 'C:\users\patcou\Desktop\freeviewing\';
 
 end
-
-win.s_n                     = input('Subject number: ','s');                % subject id number, this number is used to open the randomization file
+% Input Dialog Box
+prompt     = {'Subject Number:','Age:','Gender (m/f):'};
+dlg_title  = 'Image Matching';
+num_lines  = 1;
+defaultans = {'','x','x'};
+answer     = inputdlg(prompt,dlg_title,num_lines,defaultans);
+% win.s_n                     = input('Subject number: ','s');                % subject id number, this number is used to open the randomization file
+win.s_n                     = answer{1};
 win.fnameEDF                = sprintf('s%02d.EDF',str2num(win.s_n));       % EDF name can be only 8 letters long, so we can have numbers only between 01 and 99
 pathEDF                     = fullfile(exp_path,'data',sprintf('s%02d',str2num(win.s_n)),filesep);                           % where the EDF files are going to be saved
 if exist([pathEDF win.fnameEDF],'file')                                         % checks whether there is a file with the same name
@@ -57,11 +70,12 @@ if exist([pathEDF win.fnameEDF],'file')                                         
     end
 end
 mkdir(pathEDF)
-
-win.s_age                   = input('Subject age: ','s');
-win.s_hand                  = input('Subject handedness for writing (l/r): ','s');
-win.s_gender                = input('Subject gender (m/f): ','s');
-setStr                      = sprintf('Subject %d\nAge %s\nHandedness %s\nGender %s\n',win.s_n,win.s_age,win.s_hand,win.s_gender); % setting summary
+win.s_age                   = answer{2};
+% win.s_age                   = input('Subject age: ','s');
+% win.s_hand                  = input('Subject handedness for writing (l/r): ','s');
+win.s_gender                = answer{3};
+% win.s_gender                = input('Subject gender (m/f): ','s');
+setStr                      = sprintf('Subject %d\nAge %s\nGender %s\n',win.s_n,win.s_age,win.s_gender); % setting summary
 fprintf(setStr); 
 
 AssertOpenGL();                                                             % check if Psychtoolbox is working (with OpenGL) TODO: is this needed?
@@ -202,6 +216,7 @@ win.pairOrder     = reshape([nan(1,nBlocks);reshape(win.pairOrder,win.t_perblock
 % THE ACTUAL EXPERIMENT
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % nTrials =33
+escape_flag = 0;
 b                   = 0;                                                    % block flag
 for nT = 1:nTrials                                                          % loop throught the experiment trials
     
@@ -231,7 +246,7 @@ for nT = 1:nTrials                                                          % lo
             EyelinkDoTrackerSetup(win.el);
 
         
-         caldata = do_calib(win,nT);
+         [caldata,debug] = do_calib(win,nT,0);
         
         Screen('Flip', win.hndl);
          continue
@@ -302,7 +317,14 @@ for nT = 1:nTrials                                                          % lo
     Eyelink('message','METATR ttype %d',win.ttype(nT));         % if it was the first image in the block
    
     while GetSecs<tstart+win.trial_length                           % lopp until trials finishes
-       continue
+       [keyIsDown,seconds,keyCode] = KbCheck;
+             if keyIsDown
+                if keyCode(KbName('escape')) 
+                   Eyelink('StopRecording');
+                   escape_flag = 1;
+                    sca
+                end
+             end
     end
     
     Eyelink('StopRecording');
@@ -331,21 +353,30 @@ win.end_time = clock;
 % Finishing EDF file and transfering info (in case experiment is interrupted
 % this can be run to save the eye-tracking data)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if escape_flag
+    saveData = questdlg('Experiment Interrupted, do you wish to save data aquired sofar?',...
+        'Interrupted','Yes','No','Cancel','No'); 
+else
+    saveData = 'Yes';
+end
 
 %%%%% Task Iteration done; save files, restore stuff, DON'T clear vars %%%%
-Eyelink('CloseFile');
-Eyelink('WaitForModeReady', 500); % make sure mode switching is ok
-if ~win.DoDummyMode
-    % get EDF->DispPC: file size [bytes] if OK; 0 if cancelled; <0 if error
-    rcvStat = Eyelink('ReceiveFile', win.fnameEDF, pathEDF,1);
-    if rcvStat > 0 % only sensible if real connect
-        fprintf('EDF received to %s (%.1f MiB).\n',pathEDF,rcvStat/1024^2);
-    else
-        fprintf(2,'EDF file reception error: %d.\n', rcvStat);
+if strcmp(saveData,'Yes')
+    save([pathEDF,win.fnameEDF(1:end-3),'mat'],'win')
+    Eyelink('CloseFile');
+    Eyelink('WaitForModeReady', 500); % make sure mode switching is ok
+    if ~win.DoDummyMode
+        % get EDF->DispPC: file size [bytes] if OK; 0 if cancelled; <0 if error
+        rcvStat = Eyelink('ReceiveFile', win.fnameEDF, pathEDF,1);
+        if rcvStat > 0 % only sensible if real connect
+            fprintf('EDF received to %s (%.1f MiB).\n',pathEDF,rcvStat/1024^2);
+        else
+            fprintf(2,'EDF file reception error: %d.\n', rcvStat);
+        end
     end
 end
 
-% save([pathEDF,win.fnameEDF(1:end-3),'mat'],'win')
+% 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % CLOSING ALL DEVICES, PORTS, ETC
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
