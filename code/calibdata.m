@@ -1,4 +1,4 @@
-function [ux,uy,xyP,xyR,xgaz,ygaz,debug] = calibdata(samples,saccades,win,dotinfo,method,toplot)
+function [ux,uy,xyP,xyR,xgaz,ygaz] = calibdata(samples,saccades,win,dotinfo,method,toplot)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % function [calibmat,xgaz,ygaz] = calib(xraw,yraw,traw,calibpos,tstart_dots,dot_order)
@@ -43,45 +43,36 @@ function [ux,uy,xyP,xyR,xgaz,ygaz,debug] = calibdata(samples,saccades,win,dotinf
 
 xraw = samples.rawx';
 yraw = samples.rawy';
-traw = samples.time' ;
-% Finding raw position at calib position.
-% At the moment only taking the median position, we can implement later
-% that it takes only in account position after a saccade (~fast period of the nystagmus)
+traw = samples.time';
 
 rawdataLimit = 50000; % absolute limit in raw units 
-if toplot
-    figure
-    set(gcf,'Position',[33 171 1147 534])
-    subplot(1,2,1) % raw data plot
-    plot(xraw(abs(xraw)<rawdataLimit & abs(yraw)<rawdataLimit),yraw(abs(xraw)<rawdataLimit & abs(yraw)<rawdataLimit),'.'),hold on
-end
+% if toplot
+%     figure
+%     set(gcf,'Position',[33 171 1147 534])
+%     subplot(1,2,1) % raw data plot
+%     plot(xraw(abs(xraw)<rawdataLimit & abs(yraw)<rawdataLimit),yraw(abs(xraw)<rawdataLimit & abs(yraw)<rawdataLimit),'.'),hold on
+% end
 
 t_margin = 200; %ms 
-%%%  -----------------------------
-%%%  -----------------------------
 
-
+% cycle through points
 for pt = 1:size(dotinfo.dot_order,1)
     
-    pos_startT  = dotinfo.tstart_dots(pt);                                           % pos_startT and pos_endT mark the period corresponding to the current calibration dor
-    
-    if pt == size(dotinfo.dot_order,1)
-        pos_endT = traw(end);
-    else
-        pos_endT = dotinfo.tstart_dots(pt+1);
-    end
-    
+    % start and end timestamp of current dot
+    pos_startT  = dotinfo.tstart_dots(pt);                                          
+    pos_endT    = dotinfo.tend_dots(pt);
+
     % indexes for raw data and saccades within t_margin and end-t_margin ms 
     % of the period the calibration dot is on screen
-    %aux_calib     = traw>pos_startT+100 & traw<pos_endT-t_margin & abs(xraw)<rawdataLimit & abs(yraw)<rawdataLimit;
-
-%%%  -----------------------------
-%%%  -----------------------------
-aux_calib     = traw>pos_startT+1 & traw<pos_endT-1 & abs(xraw)<rawdataLimit & abs(yraw)<rawdataLimit;
+	aux_calib     = traw>pos_startT & traw<pos_endT & abs(xraw)<rawdataLimit & abs(yraw)<rawdataLimit;
     
 
     if ~strcmp(method,'sample')
         aux_sacc      = find(saccades.start>pos_startT+t_margin & saccades.start<pos_endT-t_margin);    % first saccade after appearance of dot +t_margin
+        %  aux_sacc = aux_sacc(saccades.dur(aux_sacc)>median(saccades.dur(aux_sacc)));
+        %  if length(aux_sacc)>8
+        %  aux_sacc = aux_sacc(1:8);
+        %  end
         aux_saccT = [];
         for st = 1:length(aux_sacc)
             aux_saccT     = [aux_saccT,find(traw>saccades.start(aux_sacc(st)) & ...      % find the last raw sample corresponding to each saccade 
@@ -96,7 +87,7 @@ aux_calib     = traw>pos_startT+1 & traw<pos_endT-1 & abs(xraw)<rawdataLimit & a
 
     else % this by design will re-write values where calibration occured more than once
         if strcmp(method,'sample')
-               xyR(1,dotinfo.dot_order(pt)) = nanmedian(xraw(aux_calib)); 
+            xyR(1,dotinfo.dot_order(pt)) = nanmedian(xraw(aux_calib)); 
             xyR(2,dotinfo.dot_order(pt)) = nanmedian(yraw(aux_calib)); 
         elseif strcmp(method,'saccade')
             xyR(1,dotinfo.dot_order(pt)) = nanmedian(xraw(aux_saccT)); 
@@ -107,22 +98,21 @@ aux_calib     = traw>pos_startT+1 & traw<pos_endT-1 & abs(xraw)<rawdataLimit & a
         end
     end
 
-    if toplot
-        plot(xraw(aux_calib),yraw(aux_calib))
-        plot(xraw(aux_saccT),yraw(aux_saccT),'.r','MarkerSize',24)
-        text(xyR(1,dotinfo.dot_order(pt)),xyR(2,dotinfo.dot_order(pt)),num2str(dotinfo.dot_order(pt)),'FontSize',18)
-        axis image
-    end
+%     if toplot
+%         plot(xraw(aux_calib),yraw(aux_calib))
+%         plot(xraw(aux_saccT),yraw(aux_saccT),'.r','MarkerSize',24)
+%         text(xyR(1,dotinfo.dot_order(pt)),xyR(2,dotinfo.dot_order(pt)),num2str(dotinfo.dot_order(pt)),'FontSize',18)
+%         axis image
+%     end
 end
-%  axis ij        % it seems that the eyetracker raw negative is downward
-%  so this flips wrongly the y axis
 
 
 % xyR = xyR-repmat(xyR(:,5),1,9) 
 
 
 
-ixC = [2,4,5,6,8];                                                          % calibration dots top,left,center,right,bottom are the ones used for the basic calibration equation
+%ixC = [2,4,5,6,8];                                                          % calibration dots top,left,center,right,bottom are the ones used for the basic calibration equation
+ixC = [1,2,3,4,5];
 A   = [ones(5,1),xyR(1,ixC)',xyR(2,ixC)',xyR(1,ixC).^2',xyR(2,ixC).^2'];
 bx  = dotinfo.calibpos(ixC,1);
 by  = dotinfo.calibpos(ixC,2);
@@ -147,27 +137,24 @@ ygaz    = ygazaux;
 %ygaz    = -(ygazaux+win.rect(4)/2);
 %xyP     = xyP+repmat(win.rect(3:4)'/2,1,9);
 
-if toplot
-%     plot(xyR(1,:),xyR(2,:),'.g','MarkerSize',17)
-    subplot(1,2,2),hold on
-    line([0 win.rect(3)],[win.rect(4)/2 win.rect(4)/2],'LineStyle',':','Color',[1 0 0])
-    line([win.rect(3)/2 win.rect(3)/2],[0 win.rect(4)],'LineStyle',':','Color',[1 0 0])
-    plot(xgaz(abs(xgaz)<5000 & abs(ygaz)<5000),ygaz(abs(xgaz)<5000 & abs(ygaz)<5000),'.')
-    for pt = 1:size(dotinfo.dot_order,1)
-         text(dotinfo.calibpos(dotinfo.dot_order(pt),1),dotinfo.calibpos(dotinfo.dot_order(pt),2),num2str(dotinfo.dot_order(pt)),'FontSize',18)
-%          text(xyP(1,dotinfo.dot_order(pt)),xyP(2,dotinfo.dot_order(pt)),num2str(dotinfo.dot_order(pt)),'FontSize',18)
-%           plot(xyR(1,dotinfo.dot_order(pt)),xyR(2,dotinfo.dot_order(pt)),'.k','MarkerSize',18)
-          plot(xyP(1,dotinfo.dot_order(pt)),xyP(2,dotinfo.dot_order(pt)),'.r','MarkerSize',24)
-    end
-    rectangle('Position',[0 0 win.rect(3) win.rect(4)])
-    axis ij
-    axis image
-    axis([0-100 win.rect(3)+100 0-100 win.rect(4)+100])
-   
-end
-
-debug.xyR = xyR;
-debug.xraw = xraw;
+% if toplot
+% %     plot(xyR(1,:),xyR(2,:),'.g','MarkerSize',17)
+%     subplot(1,2,2),hold on
+%     line([0 win.rect(3)],[win.rect(4)/2 win.rect(4)/2],'LineStyle',':','Color',[1 0 0])
+%     line([win.rect(3)/2 win.rect(3)/2],[0 win.rect(4)],'LineStyle',':','Color',[1 0 0])
+%     plot(xgaz(abs(xgaz)<5000 & abs(ygaz)<5000),ygaz(abs(xgaz)<5000 & abs(ygaz)<5000),'.')
+%     for pt = 1:size(dotinfo.dot_order,1)
+%          text(dotinfo.calibpos(dotinfo.dot_order(pt),1),dotinfo.calibpos(dotinfo.dot_order(pt),2),num2str(dotinfo.dot_order(pt)),'FontSize',18)
+% %          text(xyP(1,dotinfo.dot_order(pt)),xyP(2,dotinfo.dot_order(pt)),num2str(dotinfo.dot_order(pt)),'FontSize',18)
+% %           plot(xyR(1,dotinfo.dot_order(pt)),xyR(2,dotinfo.dot_order(pt)),'.k','MarkerSize',18)
+%           plot(xyP(1,dotinfo.dot_order(pt)),xyP(2,dotinfo.dot_order(pt)),'.r','MarkerSize',24)
+%     end
+%     rectangle('Position',[0 0 win.rect(3) win.rect(4)])
+%     axis ij
+%     axis image
+%     axis([0-100 win.rect(3)+100 0-100 win.rect(4)+100])
+%    
+% end
 
 
 %cuadrant correction, this does not work well yet
