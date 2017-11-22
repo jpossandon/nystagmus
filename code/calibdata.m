@@ -1,4 +1,4 @@
-function [ux,uy,xyP,xyR,xgaz,ygaz,xyDrift] = calibdata(samples,saccades,win,dotinfo,method,toplot)
+function [caldata,xgaz,ygaz] = calibdata(samples,saccades,win,dotinfo,method,toplot)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % function [calibmat,xgaz,ygaz] = calib(xraw,yraw,traw,calibpos,tstart_dots,dot_order)
@@ -31,13 +31,18 @@ function [ux,uy,xyP,xyR,xgaz,ygaz,xyDrift] = calibdata(samples,saccades,win,doti
 %                         'both', use the median of both above  
 %       - toplot        , 0 - no;  1 - yes         
 %   Outputs:
+%       calib.
 %       - ux,uy         , coefficients of cuadratic mapping between raw
 %                       data and the position of calibration dots in
 %                       screen. To obtain calibrated data from gaze data,
 %                       xgaze = ux'*[ones(1,size(xraw',2));xraw';yraw';xraw'.^2;yraw'.^2];
 %                       ygaze = uy'*[ones(1,size(yraw',2));xraw';yraw';xraw'.^2;yraw'.^2];
+%       - m,n           , x,y quadrant correction coefficients
 %       - xyP           , position of calibration points post-calibration
-%       - xyR           , position of calibration points pre-calibration                   
+%       - xyR           , position of calibration points pre-calibration 
+%       - xyDrift       , corrected position of last drift correction point
+%
+%       - xgaz,ygaz     , corrected gaze samples 
 % JPO, Hamburg, 11-2016
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -240,5 +245,15 @@ if strcmp(win.calibType,'HV9')
         title('9-POINT CALIBRATION','FONTSIZE',16)
    end
 end
-xyR     = xyR+repmat(xyRc,1,9);
+
+caldata.ux                  = ux;
+caldata.uy                  = uy;
+caldata.m                   = m;
+caldata.n                   = n;
+caldata.correctedDotPos     = xyP;
+caldata.uncorrectedDotPos   = xyR+repmat(xyRc,1,9);
+caldata.xyDrift             = xyDrift;
+caldata.rawCenter           = xyRc;
+caldata.rect                = win.rect;
+caldata.calibType           = win.calibType;
 
