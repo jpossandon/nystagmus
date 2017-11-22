@@ -1,4 +1,4 @@
-function [ux,uy,xyP,xyR,xgaz,ygaz] = calibdata(samples,saccades,win,dotinfo,method,toplot)
+function [ux,uy,xyP,xyR,xgaz,ygaz,xyDrift] = calibdata(samples,saccades,win,dotinfo,method,toplot)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % function [calibmat,xgaz,ygaz] = calib(xraw,yraw,traw,calibpos,tstart_dots,dot_order)
@@ -82,9 +82,16 @@ for pt = 1:size(dotinfo.dot_order,1)
     
     
     if pt == size(dotinfo.dot_order,1) && dotinfo.dot_order(pt)==5                             % the last-point should recenter the calibration grid, I have not tested so it is not yet used below 
-        x_centerCorrect = nanmedian(xraw(aux_calib)); 
-        y_centerCorrect = nanmedian(yraw(aux_calib));
-
+        if strcmp(method,'sample')
+            x_centerCorrect = nanmedian(xraw(aux_calib)); 
+            y_centerCorrect = nanmedian(yraw(aux_calib));
+        elseif strcmp(method,'saccade')
+            x_centerCorrect = nanmedian(xraw(aux_saccT)); 
+            y_centerCorrect = nanmedian(yraw(aux_saccT));
+        elseif strcmp(method,'both') 
+            x_centerCorrect = mean([nanmedian(xraw(aux_calib)),nanmedian(xraw(aux_saccT))]); 
+            y_centerCorrect = mean([nanmedian(yraw(aux_calib)),nanmedian(yraw(aux_saccT))]); 
+        end
     else % this by design will re-write values where calibration occured more than once
         if strcmp(method,'sample')
             xyR(1,dotinfo.dot_order(pt)) = nanmedian(xraw(aux_calib)); 
@@ -104,7 +111,6 @@ for pt = 1:size(dotinfo.dot_order,1)
             plot(xraw(aux_saccT),yraw(aux_saccT),'.r','MarkerSize',24)
         end
         text(xyR(1,dotinfo.dot_order(pt)),xyR(2,dotinfo.dot_order(pt)),num2str(dotinfo.dot_order(pt)),'FontSize',18)
-%         axis image
         title('ORIGINAL','FONTSIZE',16)
     end
 end
@@ -133,15 +139,18 @@ uy  = A\by;
 xgazaux = ux'*[ones(1,size(xraw'-xyRc(1),2));xraw'-xyRc(1);yraw'-xyRc(2);(xraw'-xyRc(1)).^2;yraw'-xyRc(2).^2];
 ygazaux = uy'*[ones(1,size(yraw'-xyRc(2),2));(xraw'-xyRc(1));yraw'-xyRc(2)';(xraw'-xyRc(1)).^2;yraw'-xyRc(2).^2];
 
-xyPaux = ux'*[ones(1,size(xyR,2));xyR(1,:);xyR(2,:);xyR(1,:).^2;xyR(2,:).^2];
-xyPaux = [xyPaux;uy'*[ones(1,size(xyR,2));xyR(1,:);xyR(2,:);xyR(1,:).^2;xyR(2,:).^2]];
+xyPaux  = ux'*[ones(1,size(xyR,2));xyR(1,:);xyR(2,:);xyR(1,:).^2;xyR(2,:).^2];
+xyPaux  = [xyPaux;uy'*[ones(1,size(xyR,2));xyR(1,:);xyR(2,:);xyR(1,:).^2;xyR(2,:).^2]];
 
+xyDriftaux  = ux'*[ones(1,size(x_centerCorrect'-xyRc(1),2));x_centerCorrect'-xyRc(1);y_centerCorrect'-xyRc(2);(x_centerCorrect'-xyRc(1)).^2;y_centerCorrect'-xyRc(2).^2];
+xyDriftaux  = [xyDriftaux;uy'*[ones(1,size(y_centerCorrect'-xyRc(2),2));(x_centerCorrect'-xyRc(1));y_centerCorrect'-xyRc(2)';(x_centerCorrect'-xyRc(1)).^2;y_centerCorrect'-xyRc(2).^2]];
 % xgaz    = xgazaux;
 % ygaz    = ygazaux;
 
 xgaz    = xgazaux+win.rect(3)/2;
 ygaz    = (ygazaux+win.rect(4)/2);
 xyP     = xyPaux+repmat(win.rect(3:4)'/2,1,9);
+xyDrift = xyDriftaux + win.rect(3:4)'/2;
 
 if toplot
     subplot(1,3,2),hold on
@@ -154,6 +163,9 @@ if toplot
 %           plot(xyR(1,dotinfo.dot_order(pt)),xyR(2,dotinfo.dot_order(pt)),'.k','MarkerSize',18)
           plot(xyP(1,dotinfo.dot_order(pt)),xyP(2,dotinfo.dot_order(pt)),'.r','MarkerSize',24)
     end
+    plot(xyDrift(1),xyDrift(2),'.c','MarkerSize',24)
+    text(xyDrift(1),xyDrift(2),'drift','FontSize',18)
+    
     axis([0-100 win.rect(3)+100 0-100 win.rect(4)+100])
     rectangle('Position',[0 0 win.rect(3) win.rect(4)])
     axis ij
@@ -181,21 +193,33 @@ if strcmp(win.calibType,'HV9')
         switch ixC(i)   %cuadrants
             case 1
                 auxindx = find(xgazaux<0 & ygazaux<0);
+                driftquad = find(xyDriftaux(1)<0 & xyDriftaux(2)<0);
             case 3
                 auxindx = find(xgazaux>0 & ygazaux<0);
+                driftquad = find(xyDriftaux(1)>0 & xyDriftaux(2)<0);
             case 7
                 auxindx = find(xgazaux<0 & ygazaux>0);
+                driftquad = find(xyDriftaux(1)<0 & xyDriftaux(2)>0);
             case 9
                 auxindx = find(xgazaux>0 & ygazaux>0);
+                driftquad = find(xyDriftaux(1)>0 & xyDriftaux(2)>0);
         end
         xyPaux(1,ixC(i)) = xyPaux(1,ixC(i))+m(i).*xyPaux(1,ixC(i)).*xyPaux(2,ixC(i));
         xyPaux(2,ixC(i)) = xyPaux(2,ixC(i))+n(i).*xyPaux(1,ixC(i)).*xyPaux(2,ixC(i));
         xgaz(auxindx) = xgazaux(auxindx)+m(i).*xgazaux(auxindx).*ygazaux(auxindx);
         ygaz(auxindx) = ygazaux(auxindx)+n(i).*xgazaux(auxindx).*ygazaux(auxindx);
+        if driftquad
+            xyDriftaux(1) = xyDriftaux(1)+m(i).*xyDriftaux(1).*xyDriftaux(2);
+            xyDriftaux(2) = xyDriftaux(2)+n(i).*xyDriftaux(1).*xyDriftaux(2);
+        end 
     end
     xgaz    = xgaz+win.rect(3)/2;
     ygaz    = (ygaz+win.rect(4)/2);
     xyP     = xyPaux+repmat(win.rect(3:4)'/2,1,9);
+    xyDrift = xyDriftaux + win.rect(3:4)'/2;
+
+    
+   
     if toplot
         subplot(1,3,3), hold on
         line([0 win.rect(3)],[win.rect(4)/2 win.rect(4)/2],'LineStyle',':','Color',[1 0 0])
@@ -206,6 +230,10 @@ if strcmp(win.calibType,'HV9')
               text(dotinfo.calibpos(dotinfo.dot_order(pt),1),dotinfo.calibpos(dotinfo.dot_order(pt),2),num2str(dotinfo.dot_order(pt)),'FontSize',18)
                plot(xyP(1,dotinfo.dot_order(pt)),xyP(2,dotinfo.dot_order(pt)),'.g','MarkerSize',24)
          end
+         
+         plot(xyDrift(1),xyDrift(2),'.c','MarkerSize',24)
+        text(xyDrift(1),xyDrift(2),'drift','FontSize',18)
+    
         rectangle('Position',[0 0 win.rect(3) win.rect(4)])
         axis ij
         axis([0-100 win.rect(3)+100 0-100 win.rect(4)+100])

@@ -60,4 +60,4 @@ dotinfo.tstart_dots = trial(tr).dotpos.time(end-9:end);
 dotinfo.tend_dots   = [trial(tr).dotpos.time(end-8:end) trial(tr).dotpos.time(end)+2000]
 dotinfo.dot_order   = str2num(trial(tr).dotpos.msg(end-9:end));
 [ux,uy,xyP,xyR,xgaz,ygaz] = calibdata(trial(tr).(useye).samples,trial(tr).(useye).saccade,win,dotinfo,'sample',1);
-doimage(gcf,['/Users/jossando/trabajo/India/result/' sid '/'],'png',['calib_' num2str(tr)],1);
+% doimage(gcf,['/Users/jossando/trabajo/India/result/' sid '/'],'png',['calib_' num2str(tr)],1);

@@ -156,7 +156,7 @@ for nT = 1:nTrials                                                          % lo
     if  win.block_start(nT) == 1                                                % if it is a trial that starts a block   
         b = b+1;
         EyelinkDoTrackerSetup(win.el);
-%            [caldata] = do_calib(win,nT,win.DoDummyMode);
+            [caldata] = do_calib(win,nT,win.DoDummyMode);
         Screen('Flip', win.hndl);
         win.response(nT) = NaN;
         win.result(nT)   = NaN;

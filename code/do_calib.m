@@ -319,7 +319,7 @@ for ey = 1:eyes_with_sacc_data    % loop through eyes that got saccade data
     if validation_flag == 0
         % this is the calibration calculation, ux and uy are used
         % to correct data, and to correct the validation
-        [caldata(ey).ux,caldata(ey).uy,caldata(ey).correctedDotPos,caldata(ey).uncorrectedDotPos,xgaz,ygaz] = calibdata(calibraw(ey),calibsac(ey),win,dotinfo,clType,0);
+        [caldata(ey).ux,caldata(ey).uy,caldata(ey).correctedDotPos,caldata(ey).uncorrectedDotPos,xgaz,ygaz,xyDrift] = calibdata(calibraw(ey),calibsac(ey),win,dotinfo,clType,0);
     else
         % for validation calibdata is colled only to get the uncorrected positions 
         %[bap,bip,bup,uncorrectedDotPos,debug] = calibdata(validraw(ey),validsac(ey),win,dotinfo,clType,0);      %it seems that ingoring output with a tilde does not work in windows?
