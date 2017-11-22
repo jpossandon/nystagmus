@@ -37,3 +37,27 @@ for trr=23:42
     end
     
 end
+
+%% new setup
+%%
+sid             = 's78';
+win.rect                    = [0 0 1920 1080];                                  %  horizontal x vertical resolution [pixels]
+win.calibType               = 'HV9';
+win.margin                  = [20 16];
+mPix                        = win.rect(3:4).*win.margin/100;
+if strcmp(win.calibType,'HV9')                                              % positions of calibration dots
+   dotinfo.calibpos(1:9,1)  = repmat(mPix(1):(win.rect(3)-2*(mPix(1)))/2:win.rect(3)-mPix(1),1,3);
+   dotinfo.calibpos(1:9,2)  = reshape(repmat(mPix(2):(win.rect(4)-2*(mPix(2)))/2:win.rect(4)-mPix(2),3,1),9,1);
+end
+[trial,meta] = totrial(['/Users/jossando/trabajo/India/data/' sid '/' sid '.edf'],{'raw','gaze'});
+tr = 1;
+if isfield(trial(tr).left,'saccade')
+    useye = 'left';
+else
+    useye = 'right';
+end
+dotinfo.tstart_dots = trial(tr).dotpos.time(end-9:end);
+dotinfo.tend_dots   = [trial(tr).dotpos.time(end-8:end) trial(tr).dotpos.time(end)+2000]
+dotinfo.dot_order   = str2num(trial(tr).dotpos.msg(end-9:end));
+[ux,uy,xyP,xyR,xgaz,ygaz] = calibdata(trial(tr).(useye).samples,trial(tr).(useye).saccade,win,dotinfo,'sample',1);
+doimage(gcf,['/Users/jossando/trabajo/India/result/' sid '/'],'png',['calib_' num2str(tr)],1);

@@ -23,7 +23,9 @@ win.DoDummyMode             = 1;                                            % (1
 % Screen parameters
 win.whichScreen             = 0;                                            % (CHANGE?) here we define the screen to use for the experiment, it depend on which computer we are using and how the screens are conected so it might need to be changed if the experiment starts in the wrong screen
 win.FontSZ                  = 20;                                           % font size
-win.bkgcolor                = [153 153 153];                                          % screen background color, 127 gray
+win.bkgcolor                = [153 153 153]; 
+win.foregroundcolour        = [0 0 0]; % CLUT color idx (for Psychtoolbox functions)
+win.msgfontcolour           = [0 0 0];% screen background color, 127 gray
 win.Vdst                    = 66;                                           % (!CHANGE!) viewer's distance from screen [cm]         
 win.wdth                    = 42;%51;                                           %  51X28.7 cms is teh size of Samsung Syncmaster P2370 in BPN lab EEG rechts
 win.hght                    = 23;%28.7;                                         % 42x23 is HP screen in eyetrackin clinic
@@ -52,7 +54,7 @@ if ismac                                                                    % th
     exp_path                = '/Users/jossando/trabajo/India/';              % path in my mac
 else
 %    exp_path                = 'C:\Users\bpn\Documents\jpossandon\nystagmus\';
-    exp_path                = 'C:\users\patcou\Desktop\freeviewing\';
+    exp_path                = 'C:\EXPERIMENTS\freeviewing\';
 end
 
 % Input Dialog Box
@@ -154,9 +156,11 @@ for nT = 1:nTrials                                                          % lo
     if  win.block_start(nT) == 1                                                % if it is a trial that starts a block   
         b = b+1;
         EyelinkDoTrackerSetup(win.el);
-%           [caldata] = do_calib(win,nT,win.DoDummyMode);
+%            [caldata] = do_calib(win,nT,win.DoDummyMode);
         Screen('Flip', win.hndl);
-         continue
+        win.response(nT) = NaN;
+        win.result(nT)   = NaN;
+        continue
     else
         image           = imread(fullfile(exp_path,'images','33',...
                                         win.image{nT}));      
@@ -179,8 +183,13 @@ for nT = 1:nTrials                                                          % lo
     dotrect2 = [0 0 win.dotSize*win.rect(3)/100*.3 win.dotSize*win.rect(3)/100*.3];
     dotrect2 = CenterRectOnPoint(dotrect2, win.cntr(1),win.cntr(2) );
     
-    Screen('FillOval', win.hndl, 255, dotrect1);
-    Screen('FillOval', win.hndl, 0, dotrect2);
+    if win.pairOrder(nT)==2
+        noise = 255*rand(size(image,1),size(image,2));
+        pretextureIndex	= Screen('MakeTexture', win.hndl, noise);
+        Screen('DrawTexture', win.hndl, pretextureIndex);
+    end
+    Screen('FillOval', win.hndl, win.foregroundcolour, dotrect1);
+    Screen('FillOval', win.hndl, win.bkgcolor, dotrect2);
 
     Screen('Flip', win.hndl);
     Eyelink('WaitForModeReady', 50);
@@ -216,6 +225,7 @@ for nT = 1:nTrials                                                          % lo
                Eyelink('StopRecording');
                escape_flag = 1;
                sca
+               break
             end
          end
     end
@@ -224,21 +234,40 @@ for nT = 1:nTrials                                                          % lo
     Eyelink('WaitForModeReady', 50);
     
     if win.pairOrder(nT)==2
-       Screen('DrawText', win.hndl, 'SAME (S)    DIFFERENT (D)', 400, 400, 255);
-       Screen('Flip', win.hndl); 
+       if strcmp(exptype,'ID')
+            Screen('DrawText', win.hndl, 'SAME IDENTITY (S)  DIFFERENT IDENTITY (D)', win.cntr(1), win.cntr(2), win.foregroundcolour);
+       elseif strcmp(exptype,'EM')
+            Screen('DrawText', win.hndl, 'SAME EMOTION (S)  DIFFERENT EMOTION (D)', win.cntr(1), win.cntr(2), win.foregroundcolour);
+       end
+        Screen('Flip', win.hndl); 
         while 1
             [keyIsDown,seconds,keyCode] = KbCheck;
              if keyIsDown
                 if keyCode(KbName('S')) 
-                    win.result(nT) = 1;
+                    win.response(nT) = 1;
                     break
                 end
                 if keyCode(KbName('D')) 
-                    win.result(nT) = 2;
+                    win.response(nT) = 2;
                     break
                 end
              end
         end
+        if strcmp(exptype,'ID')
+            if (ismember(win.ttype(nT),[1 2]) && win.response(nT) == 1) || ...
+                    (ismember(win.ttype(nT),[3 4]) && win.response(nT) == 2) 
+                win.result(nT) = 1;
+            elseif (ismember(win.ttype(nT),[1 2]) && win.response(nT) == 2) || ...
+                    (ismember(win.ttype(nT),[3 4]) && win.response(nT) == 1) 
+                win.result(nT) = 0; 
+            end
+        end
+    else
+         win.response(nT) = NaN;
+         win.result(nT)   = NaN; 
+    end
+    if escape_flag
+        break
     end
 end
 win.end_time = clock;

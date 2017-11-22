@@ -36,6 +36,8 @@ function [caldata] = do_calib(win,TRIALID,dummy)
 % P.Zerr, Hyderabad 20.11.17
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+ShowCursor;
+
 % make sound clips
 Fs = 2000; t = 0:1/2e4:1; s1 = 1/2*cos(2*pi*5000*t);
 Fs = 2000; t = 0:1/2e4:1; s2 = 1/2*cos(2*pi*3000*t);
@@ -53,8 +55,11 @@ if strcmp(win.calibType,'HV9')
     dotinfo.calibpos(1:9,1)  = repmat(mPix(1):(win.rect(3)-2*(mPix(1)))/2:win.rect(3)-mPix(1),1,3);
     dotinfo.calibpos(1:9,2)  = reshape(repmat(mPix(2):(win.rect(4)-2*(mPix(2)))/2:win.rect(4)-mPix(2),3,1),9,1);
     indxs                    = [5,randsample([1:4,6:9],8),5];               % start and end in the midldle, other are random
-
+elseif strcmp(win.calibType,'HV5') 
     % remove outer points, as currently not used
+    dotinfo.calibpos(1:9,1)  = repmat(mPix(1):(win.rect(3)-2*(mPix(1)))/2:win.rect(3)-mPix(1),1,3);
+    dotinfo.calibpos(1:9,2)  = reshape(repmat(mPix(2):(win.rect(4)-2*(mPix(2)))/2:win.rect(4)-mPix(2),3,1),9,1);
+    indxs                    = [5,randsample([1:4,6:9],8),5];               % start and end in the midldle, other are random
     dotinfo.calibpos([1 3 7 9],:)=[];
     indxs                    = [3,randsample([1 2 4 5],4),3];
 
@@ -401,4 +406,10 @@ WaitSecs(0.01);
 PsychPortAudio('Close', pahandle1);
 PsychPortAudio('Close', pahandle2); 
 
+
+HideCursor;
+
 end
+
+
+

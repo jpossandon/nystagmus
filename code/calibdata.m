@@ -45,13 +45,13 @@ xraw = samples.rawx';
 yraw = samples.rawy';
 traw = samples.time';
 
-rawdataLimit = 50000; % absolute limit in raw units 
-% if toplot
-%     figure
-%     set(gcf,'Position',[33 171 1147 534])
-%     subplot(1,2,1) % raw data plot
-%     plot(xraw(abs(xraw)<rawdataLimit & abs(yraw)<rawdataLimit),yraw(abs(xraw)<rawdataLimit & abs(yraw)<rawdataLimit),'.'),hold on
-% end
+rawdataLimit = 10000; % absolute limit in raw units 
+if toplot
+    figure
+    set(gcf,'Position',[33 171 1000 250])
+    subplot(1,3,1) % raw data plot
+    plot(xraw(abs(xraw)<rawdataLimit & abs(yraw)<rawdataLimit),yraw(abs(xraw)<rawdataLimit & abs(yraw)<rawdataLimit),'.'),hold on
+end
 
 t_margin = 200; %ms 
 
@@ -98,97 +98,119 @@ for pt = 1:size(dotinfo.dot_order,1)
         end
     end
 
-%     if toplot
-%         plot(xraw(aux_calib),yraw(aux_calib))
-%         plot(xraw(aux_saccT),yraw(aux_saccT),'.r','MarkerSize',24)
-%         text(xyR(1,dotinfo.dot_order(pt)),xyR(2,dotinfo.dot_order(pt)),num2str(dotinfo.dot_order(pt)),'FontSize',18)
+    if toplot
+        plot(xraw(aux_calib),yraw(aux_calib))
+        if ~strcmp(method,'sample')
+            plot(xraw(aux_saccT),yraw(aux_saccT),'.r','MarkerSize',24)
+        end
+        text(xyR(1,dotinfo.dot_order(pt)),xyR(2,dotinfo.dot_order(pt)),num2str(dotinfo.dot_order(pt)),'FontSize',18)
 %         axis image
-%     end
+        title('ORIGINAL','FONTSIZE',16)
+    end
 end
 
+xyRc = xyR(:,5);
+xyR = xyR-repmat(xyRc,1,9); 
 
-% xyR = xyR-repmat(xyR(:,5),1,9) 
-
-
-
-%ixC = [2,4,5,6,8];                                                          % calibration dots top,left,center,right,bottom are the ones used for the basic calibration equation
-ixC = [1,2,3,4,5];
+if strcmp(win.calibType,'HV9') 
+    ixC = [2,4,5,6,8];
+elseif strcmp(win.calibType,'HV5')
+% calibration dots top,left,center,right,bottom are the ones used for the basic calibration equation
+    ixC = [1,2,3,4,5];
+end
 A   = [ones(5,1),xyR(1,ixC)',xyR(2,ixC)',xyR(1,ixC).^2',xyR(2,ixC).^2'];
-bx  = dotinfo.calibpos(ixC,1);
-by  = dotinfo.calibpos(ixC,2);
-%  bx  = dotinfo.calibpos(ixC,1)-win.rect(3)/2;
-%  by  = dotinfo.calibpos(ixC,2)-win.rect(4)/2;
+% bx  = dotinfo.calibpos(ixC,1);
+% by  = dotinfo.calibpos(ixC,2);
+bx  = dotinfo.calibpos(ixC,1)-win.rect(3)/2;
+by  = dotinfo.calibpos(ixC,2)-win.rect(4)/2;
 
 ux  = A\bx;
 uy  = A\by;
 
-xgazaux = ux'*[ones(1,size(xraw',2));xraw';yraw';xraw'.^2;yraw'.^2];
-ygazaux = uy'*[ones(1,size(yraw',2));xraw';yraw';xraw'.^2;yraw'.^2];
+% xgazaux = ux'*[ones(1,size(xraw',2));xraw';yraw';xraw'.^2;yraw'.^2];
+% ygazaux = uy'*[ones(1,size(yraw',2));xraw';yraw';xraw'.^2;yraw'.^2];
 
-xyP = ux'*[ones(1,size(xyR,2));xyR(1,:);xyR(2,:);xyR(1,:).^2;xyR(2,:).^2];
-xyP = [xyP;uy'*[ones(1,size(xyR,2));xyR(1,:);xyR(2,:);xyR(1,:).^2;xyR(2,:).^2]];
+xgazaux = ux'*[ones(1,size(xraw'-xyRc(1),2));xraw'-xyRc(1);yraw'-xyRc(2);(xraw'-xyRc(1)).^2;yraw'-xyRc(2).^2];
+ygazaux = uy'*[ones(1,size(yraw'-xyRc(2),2));(xraw'-xyRc(1));yraw'-xyRc(2)';(xraw'-xyRc(1)).^2;yraw'-xyRc(2).^2];
 
-xgaz    = xgazaux;
-ygaz    = ygazaux;
+xyPaux = ux'*[ones(1,size(xyR,2));xyR(1,:);xyR(2,:);xyR(1,:).^2;xyR(2,:).^2];
+xyPaux = [xyPaux;uy'*[ones(1,size(xyR,2));xyR(1,:);xyR(2,:);xyR(1,:).^2;xyR(2,:).^2]];
 
+% xgaz    = xgazaux;
+% ygaz    = ygazaux;
 
+xgaz    = xgazaux+win.rect(3)/2;
+ygaz    = (ygazaux+win.rect(4)/2);
+xyP     = xyPaux+repmat(win.rect(3:4)'/2,1,9);
 
-%xgaz    = xgazaux+win.rect(3)/2;
-%ygaz    = -(ygazaux+win.rect(4)/2);
-%xyP     = xyP+repmat(win.rect(3:4)'/2,1,9);
-
-% if toplot
-% %     plot(xyR(1,:),xyR(2,:),'.g','MarkerSize',17)
-%     subplot(1,2,2),hold on
-%     line([0 win.rect(3)],[win.rect(4)/2 win.rect(4)/2],'LineStyle',':','Color',[1 0 0])
-%     line([win.rect(3)/2 win.rect(3)/2],[0 win.rect(4)],'LineStyle',':','Color',[1 0 0])
-%     plot(xgaz(abs(xgaz)<5000 & abs(ygaz)<5000),ygaz(abs(xgaz)<5000 & abs(ygaz)<5000),'.')
-%     for pt = 1:size(dotinfo.dot_order,1)
-%          text(dotinfo.calibpos(dotinfo.dot_order(pt),1),dotinfo.calibpos(dotinfo.dot_order(pt),2),num2str(dotinfo.dot_order(pt)),'FontSize',18)
-% %          text(xyP(1,dotinfo.dot_order(pt)),xyP(2,dotinfo.dot_order(pt)),num2str(dotinfo.dot_order(pt)),'FontSize',18)
-% %           plot(xyR(1,dotinfo.dot_order(pt)),xyR(2,dotinfo.dot_order(pt)),'.k','MarkerSize',18)
-%           plot(xyP(1,dotinfo.dot_order(pt)),xyP(2,dotinfo.dot_order(pt)),'.r','MarkerSize',24)
-%     end
-%     rectangle('Position',[0 0 win.rect(3) win.rect(4)])
-%     axis ij
+if toplot
+    subplot(1,3,2),hold on
+    line([0 win.rect(3)],[win.rect(4)/2 win.rect(4)/2],'LineStyle',':','Color',[1 0 0])
+    line([win.rect(3)/2 win.rect(3)/2],[0 win.rect(4)],'LineStyle',':','Color',[1 0 0])
+    plot(xgaz(abs(xgaz)<5000 & abs(ygaz)<5000),ygaz(abs(xgaz)<5000 & abs(ygaz)<5000),'.','Color',[0 0 1])
+    for pt = 1:size(dotinfo.dot_order,1)
+         text(dotinfo.calibpos(dotinfo.dot_order(pt),1),dotinfo.calibpos(dotinfo.dot_order(pt),2),num2str(dotinfo.dot_order(pt)),'FontSize',18)
+%          text(xyP(1,dotinfo.dot_order(pt)),xyP(2,dotinfo.dot_order(pt)),num2str(dotinfo.dot_order(pt)),'FontSize',18)
+%           plot(xyR(1,dotinfo.dot_order(pt)),xyR(2,dotinfo.dot_order(pt)),'.k','MarkerSize',18)
+          plot(xyP(1,dotinfo.dot_order(pt)),xyP(2,dotinfo.dot_order(pt)),'.r','MarkerSize',24)
+    end
+    axis([0-100 win.rect(3)+100 0-100 win.rect(4)+100])
+    rectangle('Position',[0 0 win.rect(3) win.rect(4)])
+    axis ij
+    title('5-POINT CALIBRATION','FONTSIZE',16)
 %     axis image
-%     axis([0-100 win.rect(3)+100 0-100 win.rect(4)+100])
-%    
-% end
+    
+end
 
+%Cuadrant correction
 
-%cuadrant correction, this does not work well yet
-% ixC = [1,3,7,9];
-% 
-% 
-% xi      = ux'*[ones(1,size(xyR(1,ixC),2));xyR(1,ixC);xyR(2,ixC);xyR(1,ixC).^2;xyR(2,ixC).^2];
-% yi      = uy'*[ones(1,size(xyR(1,ixC),2));xyR(1,ixC);xyR(2,ixC);xyR(1,ixC).^2;xyR(2,ixC).^2];
-% % yi      = uy'*[ones(1,size(ixC,2));xr(ixC);yr(ixC);xr(ixC).^2;yr(ixC).^2];
-% m       = (dotinfo.calibpos(ixC,1)'-xi)./xi./yi;
-% n       = (dotinfo.calibpos(ixC,2)'-yi)./xi./yi;  
-%     
-% xgaz    = nan(1,length(xgazaux));
-% ygaz    = nan(1,length(ygazaux));
-% 
-% for i = 1:4
-%     switch ixC(i)   %cuadrants
-%         case 1
-%             auxindx = find(xgazaux<dotinfo.calibpos(5,1) & ygazaux<dotinfo.calibpos(5,2));
-%         case 3
-%             auxindx = find(xgazaux>dotinfo.calibpos(5,1) & ygazaux<dotinfo.calibpos(5,2));
-%         case 7
-%             auxindx = find(xgazaux<dotinfo.calibpos(5,1) & ygazaux>dotinfo.calibpos(5,2));
-%         case 9
-%             auxindx = find(xgazaux>dotinfo.calibpos(5,1) & ygazaux>dotinfo.calibpos(5,2));
-%     end
-%    
-%     xgaz(auxindx) = xgazaux(auxindx)+m(i).*xgazaux(auxindx).*ygazaux(auxindx);
-%     ygaz(auxindx) = ygazaux(auxindx)+n(i).*xgazaux(auxindx).*ygazaux(auxindx);
-% end
-% 
-% if toplot
-%     plot(xr,yr,'.r','MarkerSize',17)
-%     subplot(1,2,2)
-%     plot(xgaz(abs(xgaz)<rawdataLimit & abs(ygaz)<rawdataLimit),ygaz(abs(xgaz)<rawdataLimit & abs(ygaz)<rawdataLimit),'.r')
-%     axis ij
-% end
+if strcmp(win.calibType,'HV9') 
+    
+    ixC = [1,3,7,9];
+    
+    xi      = ux'*[ones(1,size(xyR(1,ixC),2));xyR(1,ixC);xyR(2,ixC);xyR(1,ixC).^2;xyR(2,ixC).^2];
+    yi      = uy'*[ones(1,size(xyR(1,ixC),2));xyR(1,ixC);xyR(2,ixC);xyR(1,ixC).^2;xyR(2,ixC).^2];
+   
+    m       = (dotinfo.calibpos(ixC,1)'-win.rect(3)/2-xi)./xi./yi;
+    n       = (dotinfo.calibpos(ixC,2)'-win.rect(4)/2-yi)./xi./yi;  
+        
+    xgaz    = nan(1,length(xgazaux));
+    ygaz    = nan(1,length(ygazaux));
+    xyP     = xyPaux;
+    for i = 1:4
+        switch ixC(i)   %cuadrants
+            case 1
+                auxindx = find(xgazaux<0 & ygazaux<0);
+            case 3
+                auxindx = find(xgazaux>0 & ygazaux<0);
+            case 7
+                auxindx = find(xgazaux<0 & ygazaux>0);
+            case 9
+                auxindx = find(xgazaux>0 & ygazaux>0);
+        end
+        xyPaux(1,ixC(i)) = xyPaux(1,ixC(i))+m(i).*xyPaux(1,ixC(i)).*xyPaux(2,ixC(i));
+        xyPaux(2,ixC(i)) = xyPaux(2,ixC(i))+n(i).*xyPaux(1,ixC(i)).*xyPaux(2,ixC(i));
+        xgaz(auxindx) = xgazaux(auxindx)+m(i).*xgazaux(auxindx).*ygazaux(auxindx);
+        ygaz(auxindx) = ygazaux(auxindx)+n(i).*xgazaux(auxindx).*ygazaux(auxindx);
+    end
+    xgaz    = xgaz+win.rect(3)/2;
+    ygaz    = (ygaz+win.rect(4)/2);
+    xyP     = xyPaux+repmat(win.rect(3:4)'/2,1,9);
+    if toplot
+        subplot(1,3,3), hold on
+        line([0 win.rect(3)],[win.rect(4)/2 win.rect(4)/2],'LineStyle',':','Color',[1 0 0])
+        line([win.rect(3)/2 win.rect(3)/2],[0 win.rect(4)],'LineStyle',':','Color',[1 0 0])
+  
+        plot(xgaz(abs(xgaz)<rawdataLimit & abs(ygaz)<rawdataLimit),ygaz(abs(xgaz)<rawdataLimit & abs(ygaz)<rawdataLimit),'.','Color',[0 0 1])
+         for pt = 1:size(dotinfo.dot_order,1)
+              text(dotinfo.calibpos(dotinfo.dot_order(pt),1),dotinfo.calibpos(dotinfo.dot_order(pt),2),num2str(dotinfo.dot_order(pt)),'FontSize',18)
+               plot(xyP(1,dotinfo.dot_order(pt)),xyP(2,dotinfo.dot_order(pt)),'.g','MarkerSize',24)
+         end
+        rectangle('Position',[0 0 win.rect(3) win.rect(4)])
+        axis ij
+        axis([0-100 win.rect(3)+100 0-100 win.rect(4)+100])
+        title('9-POINT CALIBRATION','FONTSIZE',16)
+   end
+end
+xyR     = xyR+repmat(xyRc,1,9);
+
