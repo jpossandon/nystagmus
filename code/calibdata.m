@@ -50,7 +50,7 @@ xraw = samples.rawx';
 yraw = samples.rawy';
 traw = samples.time';
 
-rawdataLimit = 10000; % absolute limit in raw units 
+rawdataLimit = 50000; % absolute limit in raw units 
 if toplot
     figure
     set(gcf,'Position',[33 171 1000 250])
@@ -64,7 +64,7 @@ t_margin = 200; %ms
 for pt = 1:size(dotinfo.dot_order,1)
     
     % start and end timestamp of current dot
-    pos_startT  = dotinfo.tstart_dots(pt);                                          
+     pos_startT  = dotinfo.tstart_dots(pt);                                          
     pos_endT    = dotinfo.tend_dots(pt);
 
     % indexes for raw data and saccades within t_margin and end-t_margin ms 
@@ -86,7 +86,9 @@ for pt = 1:size(dotinfo.dot_order,1)
     end
     
     
-    if pt == size(dotinfo.dot_order,1) && dotinfo.dot_order(pt)==5                             % the last-point should recenter the calibration grid, I have not tested so it is not yet used below 
+    if pt == size(dotinfo.dot_order,1) && ((strcmp(win.calibType,'HV9') && dotinfo.dot_order(pt)==5) ||...
+            (strcmp(win.calibType,'HV5') && dotinfo.dot_order(pt)==3))     
+    % the last-point should recenter the calibration grid, I have not tested so it is not yet used below 
         if strcmp(method,'sample')
             x_centerCorrect = nanmedian(xraw(aux_calib)); 
             y_centerCorrect = nanmedian(yraw(aux_calib));
@@ -120,14 +122,13 @@ for pt = 1:size(dotinfo.dot_order,1)
     end
 end
 
-xyRc = xyR(:,5);
-xyR = xyR-repmat(xyRc,1,9); 
-
+ xyRc = xyR(:,5);
+xyR = xyR-repmat(xyRc,1,size(xyRc,2)); 
 if strcmp(win.calibType,'HV9') 
-    ixC = [2,4,5,6,8];
+   ixC = [2,4,5,6,8];
 elseif strcmp(win.calibType,'HV5')
 % calibration dots top,left,center,right,bottom are the ones used for the basic calibration equation
-    ixC = [1,2,3,4,5];
+     ixC = [1,2,3,4,5];
 end
 A   = [ones(5,1),xyR(1,ixC)',xyR(2,ixC)',xyR(1,ixC).^2',xyR(2,ixC).^2'];
 % bx  = dotinfo.calibpos(ixC,1);
@@ -154,7 +155,7 @@ xyDriftaux  = [xyDriftaux;uy'*[ones(1,size(y_centerCorrect'-xyRc(2),2));(x_cente
 
 xgaz    = xgazaux+win.rect(3)/2;
 ygaz    = (ygazaux+win.rect(4)/2);
-xyP     = xyPaux+repmat(win.rect(3:4)'/2,1,9);
+xyP     = xyPaux+repmat(win.rect(3:4)'/2,1,size(xyPaux,2));
 xyDrift = xyDriftaux + win.rect(3:4)'/2;
 
 if toplot
@@ -220,7 +221,7 @@ if strcmp(win.calibType,'HV9')
     end
     xgaz    = xgaz+win.rect(3)/2;
     ygaz    = (ygaz+win.rect(4)/2);
-    xyP     = xyPaux+repmat(win.rect(3:4)'/2,1,9);
+    xyP     = xyPaux+repmat(win.rect(3:4)'/2,1,size(xyPaux,2));
     xyDrift = xyDriftaux + win.rect(3:4)'/2;
 
     
@@ -248,12 +249,17 @@ end
 
 caldata.ux                  = ux;
 caldata.uy                  = uy;
-caldata.m                   = m;
-caldata.n                   = n;
 caldata.correctedDotPos     = xyP;
-caldata.uncorrectedDotPos   = xyR+repmat(xyRc,1,9);
+caldata.uncorrectedDotPos   = xyR+repmat(xyRc,1,size(xyRc,2));
 caldata.xyDrift             = xyDrift;
 caldata.rawCenter           = xyRc;
 caldata.rect                = win.rect;
 caldata.calibType           = win.calibType;
-
+caldata.samples             = samples;
+if strcmp(win.calibType,'HV9') 
+    caldata.m                   = m;
+    caldata.n                   = n;
+elseif strcmp(win.calibType,'HV5') 
+    caldata.m                   = NaN;
+    caldata.n                   = NaN;
+end

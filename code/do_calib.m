@@ -1,4 +1,4 @@
-function [caldata] = do_calib(win,TRIALID,dummy)
+function [caldata,calibraw,dotinfo] = do_calib(win,TRIALID,dummy)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % do_calib(win,TRIALID)
 % 
@@ -162,10 +162,9 @@ while current_position < length(indxs)+1
                 % if we received data from one point
                 % make manual selection per eye
                 if win.manual_select
-                    [xsample,ysample,timesample,accept] = showandSelect(win,calibraw,calibsac);
+                    [xsample,ysample,timesample,accept,start_time,end_time] = showandSelect(win,calibraw,calibsac);
                 end
-
-                current_position = current_position+1;
+              
                 break;
                 
 %             elseif keyCode(KbName('LeftArrow'))
@@ -189,12 +188,12 @@ while current_position < length(indxs)+1
                 
                 if getsamples>0
 
-                    dotinfo.tstart_dots(current_position)   = GetSecs*1000;
+%                     dotinfo.tstart_dots(current_position)   = GetSecs*1000;
                     datacollectionstarted=1;
                     %PsychPortAudio('Start', pahandle1, 1, 0, 1, 0.25);
                     %PsychPortAudio('Stop', pahandle1);
                 elseif getsamples<0 && datacollectionstarted
-                    dotinfo.tend_dots(current_position)   = GetSecs*1000;
+%                     dotinfo.tend_dots(current_position)   = GetSecs*1000;
                     wehavedata=1;
                     %PsychPortAudio('Start', pahandle2, 1, 0, 1, 0.25);
                     %PsychPortAudio('Stop', pahandle2);
@@ -277,14 +276,16 @@ while current_position < length(indxs)+1
             tFlip = Screen('AsyncFlipBegin', win.hndl,[],2);
         end
     end
-    while KbCheck; end
-
+     while KbCheck; end
     if accept
-        calibraw_select.time = [calibraw_select.time timesample];
-        calibraw_select.rawx = [calibraw_select.rawx xsample];                         %px,py are raw data, gx,gy gaze data; hx,hy headref, data from both eye might be included. The easiest would be to use the uncalibrated GAZE gx,gy data             
-        calibraw_select.rawy = [calibraw_select.rawy ysample];
-    else
-        current_position = current_position-1;
+            calibraw_select.time = [calibraw_select.time timesample];
+            calibraw_select.rawx = [calibraw_select.rawx xsample];                         %px,py are raw data, gx,gy gaze data; hx,hy headref, data from both eye might be included. The easiest would be to use the uncalibrated GAZE gx,gy data             
+            calibraw_select.rawy = [calibraw_select.rawy ysample];
+            
+            dotinfo.tstart_dots(current_position) = start_time;
+            dotinfo.tend_dots(current_position)   = end_time;
+            current_position = current_position+1;
+     
     end
     
 end % positions/dots

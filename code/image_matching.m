@@ -17,7 +17,7 @@ end
 
 clear
 % this is for debugging
-win.DoDummyMode             = 1;                                            % (1) is for debugging without an eye-tracker, (0) is for running the experiment
+win.DoDummyMode             = 0;                                            % (1) is for debugging without an eye-tracker, (0) is for running the experiment
 % PsychDebugWindowConfiguration(0.5);%0.7);                                       % this is for debugging with a single screen
 
 % Screen parameters
@@ -156,7 +156,7 @@ for nT = 1:nTrials                                                          % lo
     if  win.block_start(nT) == 1                                                % if it is a trial that starts a block   
         b = b+1;
         EyelinkDoTrackerSetup(win.el);
-            [caldata] = do_calib(win,nT,win.DoDummyMode);
+        [caldata,calibraw,dotinfo] = do_calib(win,nT,win.DoDummyMode);
         Screen('Flip', win.hndl);
         win.response(nT) = NaN;
         win.result(nT)   = NaN;
@@ -183,11 +183,11 @@ for nT = 1:nTrials                                                          % lo
     dotrect2 = [0 0 win.dotSize*win.rect(3)/100*.3 win.dotSize*win.rect(3)/100*.3];
     dotrect2 = CenterRectOnPoint(dotrect2, win.cntr(1),win.cntr(2) );
     
-    if win.pairOrder(nT)==2
-        noise = 255*rand(size(image,1),size(image,2));
-        pretextureIndex	= Screen('MakeTexture', win.hndl, noise);
-        Screen('DrawTexture', win.hndl, pretextureIndex);
-    end
+%     if win.pairOrder(nT)==2
+%         noise = 255*rand(size(image,1),size(image,2));
+%         pretextureIndex	= Screen('MakeTexture', win.hndl, noise);
+%         Screen('DrawTexture', win.hndl, pretextureIndex);
+%     end
     Screen('FillOval', win.hndl, win.foregroundcolour, dotrect1);
     Screen('FillOval', win.hndl, win.bkgcolor, dotrect2);
 
