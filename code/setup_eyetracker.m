@@ -19,10 +19,10 @@ function [el cmds] = setup_eyetracker(win, ver)
 % Any command CMD found in the INI-files (the Manuals are incomplete!) can
 % be sent as an EyelinkCmd( 'CMD') over the network link.
 % The INI-files are provided by SR Research in their Host PC application
-% (downloadable from their support forum??), the NBP-svn source tree??, or
+% (downloadable from their support forum¹), the NBP-svn source tree², or
 % may be copied from the EyeLink Host PC to a USB stick (in Windows mode).
-% ??https://www.sr-support.com/
-% ??TRAC url is https://ikw.uni-osnabrueck.de/trac/nbp/, search "INI files"
+% ¹https://www.sr-support.com/
+% ²TRAC url is https://ikw.uni-osnabrueck.de/trac/nbp/, search "INI files"
 %
 % Created 11/2012 by Johannes Keyser (jkeyser@uos.de), with various help
 %                    from Jose Ossandon, Hannah Knepper, Benedict Ehinger.
@@ -218,8 +218,8 @@ cmds(end+1) = EyelinkCmd('heuristic_filter 1 2');
 %%% Parser Configuration
 % ELPG 25.10.8  Typical Parser Configurations
 % The Cognitive configuration is optimal for visual search and reading, and
-% and ignores most saccades smaller than 0.5??. It's less sensitive to setup
-% problems. The Pursuit configuration is designed to detect small (<0.25??)
+% and ignores most saccades smaller than 0.5°. It's less sensitive to setup
+% problems. The Pursuit configuration is designed to detect small (<0.25°)
 % saccades, but may produce false saccades if subject setup is poor.
 % ELPG 25.10.1  select_parser_configuration = <set>
 % EyeLink II and EyeLink1000 ONLY! Selects the preset standard parser setup
@@ -245,7 +245,7 @@ cmds(end+1) = EyelinkCmd('select_parser_configuration = 0');
 
 % set pupil Tracking model [in Remote mode, only "ellipse" exists!]
 % no = centroid, yes = ellipse
-cmds(end+1) = EyelinkCmd( 'use_ellipse_fitter = YES');
+cmds(end+1) = EyelinkCmd( 'use_ellipse_fitter = NO');
 % set sample rate in camera setup screen
 cmds(end+1) = EyelinkCmd( 'sample_rate = 500');
 %%% SETUP of calibration requirements for patients qith nzstagmus
@@ -262,7 +262,7 @@ cmds(end+1) = EyelinkCmd( 'manual_collection_fixation_lookback = 500');
 % HV13 - 13-point, for large calibration region (ELII >=ver2.0 or EL 1000)
 %%% from CALIBR.INI:
 % HV13 = 13-point, bicubic calibration
-% HV13 works best with larger angular displays (> +/-20??). It should NOT be
+% HV13 works best with larger angular displays (> +/-20°). It should NOT be
 % used when accurate data is needed from corners of calibrated area!
 cmds(end+1) = EyelinkCmd('calibration_type = HV9');
 % calibration sequencing "YES": auto, "NO": manual. With PD patients: NO!
@@ -360,7 +360,7 @@ cmds(end+1) = EyelinkCmd('val_repeat_first_target = YES');
 % calibration and drift correction, and this is also the background for the
 % camera images. The background color should match the average brightness
 % of your experimental display, as this will prevent rapid changes in the
-% subject???s pupil size at the start of the trial. This will provide the
+% subject’s pupil size at the start of the trial. This will provide the
 % best eye-tracking accuracy as well.
 % [...]
 % A background color of black with white targets is used by many 
@@ -370,9 +370,9 @@ cmds(end+1) = EyelinkCmd('val_repeat_first_target = YES');
 % helps reduce pupil size and increase eye-tracking range, and may reduce
 % retinal afterimages."
 % Also https://www.sr-support.com/showthread.php?19-EyeLink-MATLAB-Toolbox
-el.foregroundcolour = win.foregroundcolour; % CLUT color idx (for Psychtoolbox functions)
+el.foregroundcolour = 255; % CLUT color idx (for Psychtoolbox functions)
 el.backgroundcolour = win.bkgcolor;
-el.msgfontcolour    = win.msgfontcolour;
+el.msgfontcolour    = 200;
 % ELPG 12.2  Calibration Target Appearance
 % The standard calibration and drift correction target is a filled circle
 % (for peripheral delectability) with a central "hole" target (for accurate
@@ -386,7 +386,7 @@ el.msgfontcolour    = win.msgfontcolour;
 % the units of calibrationtargetsize and calibrationtargetwidth are
 % percentage of the PTB-window's width; just set to taste?
 % Example in ELPG suggests size: SCRWIDTH/60, hole: SCRWIDTH/300 [pixels]
-el.calibrationtargetsize   = 3; % [% of window width]
+el.calibrationtargetsize   = 1; % [% of window width]
 % size of white dot in the center of the calibration target 
 el.calibrationtargetwidth  = 1; % [% of window width]
 el.calibrationtargetcolour = 255; % CLUT color index
@@ -398,6 +398,10 @@ el.displayCalResults = true;
 % el.eyeimgsize = 50; % [percentage of screen], default 30
 el.allowlocaltrigger = true; % allow user to trigger him or herself
 el.allowlocalcontrol = true; % allow control from subject-computer
+
+el.MISSING      = -30000;
+el.MISSING_DATA = -30000;
+
 EyelinkUpdateDefaults(el) % pass changes to the MEX-callback function
 
 %%% If you set 'generate_default_targets = NO', you have to specify the

@@ -123,7 +123,7 @@ for pt = 1:size(dotinfo.dot_order,1)
 end
 
  xyRc = xyR(:,5);
-xyR = xyR-repmat(xyRc,1,size(xyRc,2)); 
+xyR = xyR-repmat(xyRc,1,size(xyR,2)); 
 if strcmp(win.calibType,'HV9') 
    ixC = [2,4,5,6,8];
 elseif strcmp(win.calibType,'HV5')
@@ -142,8 +142,8 @@ uy  = A\by;
 % xgazaux = ux'*[ones(1,size(xraw',2));xraw';yraw';xraw'.^2;yraw'.^2];
 % ygazaux = uy'*[ones(1,size(yraw',2));xraw';yraw';xraw'.^2;yraw'.^2];
 
-xgazaux = ux'*[ones(1,size(xraw'-xyRc(1),2));xraw'-xyRc(1);yraw'-xyRc(2);(xraw'-xyRc(1)).^2;yraw'-xyRc(2).^2];
-ygazaux = uy'*[ones(1,size(yraw'-xyRc(2),2));(xraw'-xyRc(1));yraw'-xyRc(2)';(xraw'-xyRc(1)).^2;yraw'-xyRc(2).^2];
+xgazaux = ux'*[ones(1,size(xraw'-xyRc(1),2));xraw'-xyRc(1);yraw'-xyRc(2);(xraw'-xyRc(1)).^2;(yraw'-xyRc(2)).^2];
+ygazaux = uy'*[ones(1,size(yraw'-xyRc(2),2));xraw'-xyRc(1);yraw'-xyRc(2);(xraw'-xyRc(1)).^2;(yraw'-xyRc(2)).^2];
 
 xyPaux  = ux'*[ones(1,size(xyR,2));xyR(1,:);xyR(2,:);xyR(1,:).^2;xyR(2,:).^2];
 xyPaux  = [xyPaux;uy'*[ones(1,size(xyR,2));xyR(1,:);xyR(2,:);xyR(1,:).^2;xyR(2,:).^2]];
@@ -167,7 +167,7 @@ if toplot
          text(dotinfo.calibpos(dotinfo.dot_order(pt),1),dotinfo.calibpos(dotinfo.dot_order(pt),2),num2str(dotinfo.dot_order(pt)),'FontSize',18)
 %          text(xyP(1,dotinfo.dot_order(pt)),xyP(2,dotinfo.dot_order(pt)),num2str(dotinfo.dot_order(pt)),'FontSize',18)
 %           plot(xyR(1,dotinfo.dot_order(pt)),xyR(2,dotinfo.dot_order(pt)),'.k','MarkerSize',18)
-          plot(xyP(1,dotinfo.dot_order(pt)),xyP(2,dotinfo.dot_order(pt)),'.r','MarkerSize',24)
+          plot(xyP(1,dotinfo.dot_order(pt)),xyP(2,dotinfo.dot_order(pt)),'.r','MarkerSize',16)
     end
     plot(xyDrift(1),xyDrift(2),'.c','MarkerSize',24)
     text(xyDrift(1),xyDrift(2),'drift','FontSize',18)
@@ -234,7 +234,7 @@ if strcmp(win.calibType,'HV9')
         plot(xgaz(abs(xgaz)<rawdataLimit & abs(ygaz)<rawdataLimit),ygaz(abs(xgaz)<rawdataLimit & abs(ygaz)<rawdataLimit),'.','Color',[0 0 1])
          for pt = 1:size(dotinfo.dot_order,1)
               text(dotinfo.calibpos(dotinfo.dot_order(pt),1),dotinfo.calibpos(dotinfo.dot_order(pt),2),num2str(dotinfo.dot_order(pt)),'FontSize',18)
-               plot(xyP(1,dotinfo.dot_order(pt)),xyP(2,dotinfo.dot_order(pt)),'.g','MarkerSize',24)
+               plot(xyP(1,dotinfo.dot_order(pt)),xyP(2,dotinfo.dot_order(pt)),'.g','MarkerSize',16)
          end
          
          plot(xyDrift(1),xyDrift(2),'.c','MarkerSize',24)
@@ -250,7 +250,7 @@ end
 caldata.ux                  = ux;
 caldata.uy                  = uy;
 caldata.correctedDotPos     = xyP;
-caldata.uncorrectedDotPos   = xyR+repmat(xyRc,1,size(xyRc,2));
+caldata.uncorrectedDotPos   = xyR+repmat(xyRc,1,size(xyR,2));
 caldata.xyDrift             = xyDrift;
 caldata.rawCenter           = xyRc;
 caldata.rect                = win.rect;

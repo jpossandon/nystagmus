@@ -36,7 +36,7 @@ function [caldata,calibraw,dotinfo] = do_calib(win,TRIALID,dummy)
 % P.Zerr, Hyderabad 20.11.17
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-ShowCursor;
+HideCursor;
 
 % make sound clips
 Fs = 2000; t = 0:1/2e4:1; s1 = 1/2*cos(2*pi*5000*t);
@@ -97,6 +97,10 @@ dotrectIn = [0 0 win.dotSize*win.rect(3)/100*.3 win.dotSize*win.rect(3)/100*.3];
 % load colormap into cmap
 load('hsvcolormap')
 
+
+datacollectiontester={};
+
+
 % cycle through calibration dots
 while current_position < length(indxs)+1  
     
@@ -114,9 +118,8 @@ while current_position < length(indxs)+1
     % for current point has started
     datacollectionstarted=0;
     
-    
+    % accept calibration for one point
     accept=0;
-    
     
     % reset sample counter
     n=1;
@@ -142,11 +145,7 @@ while current_position < length(indxs)+1
     Screen('FillOval', win.hndl, 0, dotrect2);
 
     last_dotTime = Screen('Flip', win.hndl);                                % last_dotTime for an easy flickering 
-    
-    if ~dummy
-        Eyelink('message','METATR dotpos %d',indxs(current_position));                    % position of the calibration dot of next data as an index
-    end
-    
+        
     if validation_flag == 0
         dotinfo.dot_order(current_position,1)   = indxs(current_position);
     end
@@ -187,14 +186,14 @@ while current_position < length(indxs)+1
                 end
                 
                 if getsamples>0
-
-%                     dotinfo.tstart_dots(current_position)   = GetSecs*1000;
                     datacollectionstarted=1;
                     %PsychPortAudio('Start', pahandle1, 1, 0, 1, 0.25);
                     %PsychPortAudio('Stop', pahandle1);
                 elseif getsamples<0 && datacollectionstarted
-%                     dotinfo.tend_dots(current_position)   = GetSecs*1000;
                     wehavedata=1;
+                    
+                    save('datac','datacollectiontester')
+                    
                     %PsychPortAudio('Start', pahandle2, 1, 0, 1, 0.25);
                     %PsychPortAudio('Stop', pahandle2);
                 end
@@ -212,9 +211,16 @@ while current_position < length(indxs)+1
 
         if getsamples>0
             if ~dummy
-                if Eyelink('NewFloatSampleAvailable') > 0
-                    data = Eyelink('NewestFloatSample');            
-                end
+%                 if Eyelink('NewFloatSampleAvailable') > 0
+%                     data = Eyelink('NewestFloatSample');
+% %                     datacollectiontester{end+1}=data;
+%                 end
+                [data] = get_ETdataraw;
+%                 if dataoldtype ==200
+%                     data.time
+% %                     dataold.entime
+%                     diftime = dataold.time-data.time
+%                 end
             else        
                 [mx, my]  = GetMouse(win.hndl);
                 data.time = GetSecs*1000;
@@ -224,6 +230,7 @@ while current_position < length(indxs)+1
             end
 
             if data.type==200   % samples
+                200;
                 for ey = 1:size(data.px,2)
                     if validation_flag == 0
                         calibraw(ey).time(n)  = data.time;
@@ -241,6 +248,7 @@ while current_position < length(indxs)+1
                 n  = n+1;                                                     % we need different indexes to fill correctly the different structures
                 nv = nv+1;
             elseif data.type==6   % end saccade
+                6;
                 sEye = data.eye+1; %%% !!! isn't this now always using one (the same) eye? ANSWeR: I do not think so, saccade and fication events are different lines for each eye
                 if validation_flag == 0
                     calibsac(sEye).start(:,ns(sEye)) = data.sttime;
@@ -284,8 +292,13 @@ while current_position < length(indxs)+1
             
             dotinfo.tstart_dots(current_position) = start_time;
             dotinfo.tend_dots(current_position)   = end_time;
-            current_position = current_position+1;
-     
+        if ~dummy
+            Eyelink('message','METATR dotpos %d',indxs(current_position));                    % position of the calibration dot of next data as an index
+            Eyelink('message','METATR dotstart %d',start_time);      
+            Eyelink('message','METATR dotend %d',end_time);% position of the calibration dot of next data as an index
+        end
+        current_position = current_position+1;
+        
     end
     
 end % positions/dots
@@ -407,8 +420,6 @@ WaitSecs(0.01);
 PsychPortAudio('Close', pahandle1);
 PsychPortAudio('Close', pahandle2); 
 
-
-HideCursor;
 
 end
 

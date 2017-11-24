@@ -1,4 +1,6 @@
-function [output_x,output_y,output_time,accept] = showandSelect(win,calibraw,calibsac)
+function [output_x,output_y,output_time,accept,start_time,end_time] = showandSelect(win,calibraw,calibsac)
+
+save('test1','calibraw','calibsac')
 
 % setup display colors
 horcol         = [0 0 255];
@@ -13,22 +15,22 @@ for ey=1:2
     accept=0;
 
     while ~accept
+        
+        % load samples
+        xsample = calibraw(ey).rawx;
+        ysample = calibraw(ey).rawy;
 
-        % timestamps
-        dottime_original = calibraw(ey).time;
-        dottime = dottime_original - calibraw(ey).time(1);
+        % remove missing values
+        xsample(abs(xsample)==30000 | abs(xsample)==32768) = nan;
+        ysample(abs(ysample)==30000 | abs(ysample)==32768) = nan;
         
-        % samples
-        xsample_original = calibraw(ey).rawx;
-        ysample_original = calibraw(ey).rawy;
-        
-        xsample = xsample_original - min(xsample_original);
-        ysample = ysample_original- min(ysample_original);
+        % baseline to smallest value   
+        % both traces now also have the same scale
+        smallest_sample = min([min(xsample) min(ysample)]);
+        xsample = xsample - smallest_sample;
+        ysample = ysample - smallest_sample;
 
-        % remove extreme values [and missing values]
-        xsample(xsample<prctile(xsample,[1]) | xsample>prctile(xsample,[99])) = NaN;
-        ysample(ysample<prctile(ysample,[1]) | ysample>prctile(ysample,[99])) = NaN;
-        
+
         % make display box limits
         xpixmin = .05*win.rect(3);
         xpixmax = .90*win.rect(3);
@@ -40,7 +42,7 @@ for ey=1:2
 
         % create yvalues from percentage of sample range
         ypix_xraw =  ypixmin + (xsample./max(xsample)).* ypixmax;
-        ypix_yraw =  ypixmin + (ysample./max(ysample)).* ypixmax;
+        ypix_yraw =  ypixmin + (ysample./max(xsample)).* ypixmax;
 
         % draw samples
         Screen('DrawDots', win.hndl, [xpix; ypix_xraw],2,horcol,[0 0],1);
@@ -59,11 +61,7 @@ for ey=1:2
             for sacc=1:length(calibsac) 
             
                 %sacc_start = calibsac.
-                %
-                %
-                %
-                %
-                
+
                 % saccade startxy
                 % saccad  end xy
                 % transform x's exactly like xsamples
@@ -78,42 +76,42 @@ for ey=1:2
         end
         
         
-        
-        
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        
-        
-        
-        
-        
-        
         starts = nan;
         ends   = nan;
+        ShowCursor;
         while isnan(starts) || isnan(ends)
+            
             % get mouse click
-            [clicks, mx, my, buttons] = GetClicks;
+            [~, mx, ~, buttons] = GetClicks;
 
             if buttons==1 && mx>xpixmin && mx<xpixmax && isnan(starts)
                 % if mouse click within box
                 % go from pixel value to sample index
-                [c starts] = min(abs(xpix-mx));
+                [~, starts] = min(abs(xpix-mx));
                 buttons=0;
                 mx_start=mx;
             end
 
             if buttons==1 && mx>mx_start && mx<xpixmax && ~isnan(starts) 
-                [c ends] = min(abs(xpix-mx));
-            end        
+                [~, ends] = min(abs(xpix-mx));
+            end  
+            
         end
-
+        HideCursor;
+        
         % select samples from timestamp indexes
         xsample_select=xsample(starts:ends);
         ysample_select=ysample(starts:ends);
 
         xpix_select      =  xpix(starts:ends);%xpixmin + (dottime_select./max(dottime)) .* xpixmax;
         ypix_xraw_select =  ypixmin + (xsample_select./max(xsample)) .* ypixmax;
-        ypix_yraw_select =  ypixmin + (ysample_select./max(ysample)) .* ypixmax;
+        ypix_yraw_select =  ypixmin + (ysample_select./max(xsample)) .* ypixmax;
 
+        %%% --------------------------------
+        % same change as above (equalize range for y to x)
+        
+        
         % draw uncorrected data again
         Screen('DrawDots', win.hndl, [xpix; ypix_xraw],2,horcol,[0 0],1);
         Screen('DrawDots', win.hndl, [xpix; ypix_yraw],2,vertcol,[0 0],1);
@@ -146,21 +144,27 @@ for ey=1:2
         output_time=[];
         output_x=[];
         output_y=[];
+        start_time=[];
+        end_time=[];
         break
     end
     
     if ey==1
-        output_time = nan(2,length(xsample_original));
-        output_x    = nan(2,length(xsample_original));
-        output_y    = nan(2,length(xsample_original));
+        output_time = nan(2,length(calibraw(ey).rawx));
+        output_x    = nan(2,length(calibraw(ey).rawx));
+        output_y    = nan(2,length(calibraw(ey).rawx));
     end
 
     % output the selected samples
-    output_time(ey,starts:ends) = dottime_original(starts:ends);
-    output_x(ey,starts:ends)    = xsample_original(starts:ends);                                   %px,py are raw data, gx,gy gaze data; hx,hy headref, data from both eye might be included. The easiest would be to use the uncalibrated GAZE gx,gy data             
-    output_y(ey,starts:ends)    = ysample_original(starts:ends);
-    calibsac(ey,starts:ends)    = 1;
+    output_time(ey,starts:ends) = calibraw(ey).time(starts:ends);
+    output_x(ey,starts:ends)    = calibraw(ey).rawx(starts:ends);                                   %px,py are raw data, gx,gy gaze data; hx,hy headref, data from both eye might be included. The easiest would be to use the uncalibrated GAZE gx,gy data             
+    output_y(ey,starts:ends)    = calibraw(ey).rawy(starts:ends);
+%     calibsac(ey,starts:ends)    = 1;
 
+    start_time                  = calibraw(ey).time(1);
+    end_time                    = calibraw(ey).time(end);
+    
+    
 end % for each ey
 
 

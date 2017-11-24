@@ -40,16 +40,25 @@
 
 %% new setup
 %%
-sid             = 's78';
-win.rect                    = [0 0 1920 1080];                                  %  horizontal x vertical resolution [pixels]
-win.calibType               = 'HV9';
-win.margin                  = [20 16];
-mPix                        = win.rect(3:4).*win.margin/100;
-if strcmp(win.calibType,'HV9')                                              % positions of calibration dots
-   dotinfo.calibpos(1:9,1)  = repmat(mPix(1):(win.rect(3)-2*(mPix(1)))/2:win.rect(3)-mPix(1),1,3);
-   dotinfo.calibpos(1:9,2)  = reshape(repmat(mPix(2):(win.rect(4)-2*(mPix(2)))/2:win.rect(4)-mPix(2),3,1),9,1);
-end
-[trial,meta] = totrial(['/Users/jossando/trabajo/India/data/' sid '/' sid '.edf'],{'raw','gaze'});
+sid             = 's090';
+ win.rect                    = [0 0 1920 1080];                                  %  horizontal x vertical resolution [pixels]
+ win.calibType               = 'HV9';
+ win.margin                  = [20 16];
+ mPix                        = win.rect(3:4).*win.margin/100;
+  dotinfo.calibpos(1:9,1)  = repmat(mPix(1):(win.rect(3)-2*(mPix(1)))/2:win.rect(3)-mPix(1),1,3);
+     dotinfo.calibpos(1:9,2)  = reshape(repmat(mPix(2):(win.rect(4)-2*(mPix(2)))/2:win.rect(4)-mPix(2),3,1),9,1);
+% dotinfo.tstart_dots = trial(1).dotstart.time
+% dotinfo.tend_dots = trial(1).dotend.time
+dotinfo.tstart_dots = str2double(cellstr(trial(1).dotstart.msg));
+dotinfo.tend_dots = str2double(cellstr(trial(1).dotend.msg));
+dotinfo.dot_order = str2double(cellstr(trial(1).dotpos.msg));
+     % if strcmp(win.calibType,'HV5') 
+%     % remove outer points, as currently not used
+%     dotinfo.calibpos([1 3 7 9],:)=[];
+%     
+% end
+[trial,meta] = totrial(['/Users/jossando/trabajo/India/data/' sid '/' sid 'ID.edf'],{'raw','gaze'});
+
 %%
 tr = 1;
 if isfield(trial(tr).left,'saccade')
@@ -57,20 +66,28 @@ if isfield(trial(tr).left,'saccade')
 else
     useye = 'right';
 end
-dotinfo.tstart_dots = trial(tr).dotpos.time(end-9:end);
-dotinfo.tend_dots   = [trial(tr).dotpos.time(end-8:end) trial(tr).dotpos.time(end)+2000]
-dotinfo.dot_order   = str2num(trial(tr).dotpos.msg(end-9:end));
-[caldata,xgaz,ygaz] = calibdata(trial(tr).(useye).samples,trial(tr).(useye).saccade,win,dotinfo,'sample',1);
+load(['/Users/jossando/trabajo/India/data/' sid '/' sid 'ID.mat'])
+% dotinfo = win.calib.dotinfo;
+% trial(tr).(useye).samples.time = trial(tr).(useye).samples.pctime 
+% [caldata,xgaz,ygaz] = calibdata(trial(tr).(useye).samples,trial(tr).(useye).saccade,win,dotinfo,'sample',1);
+[caldata,xgaz,ygaz] = calibdata(win.calib.caldata(1).samples,[],win,win.calib.dotinfo,'sample',1);
 % doimage(gcf,['/Users/jossando/trabajo/India/result/' sid '/'],'png',['calib_' num2str(tr)],1);
 %%
-for trr=2:22
+for trr=2:10
     try
     figure
-    im = imread(['/Users/jossando/trabajo/India/images/' trial(trr).category.msg '/' trial(trr).image.msg '.png']);
+    im = imread(['/Users/jossando/trabajo/India/images/33/' trial(trr).image.msg]);
     imshow(im),hold on
     [xgaz,ygaz] = correct_raw(trial(trr).(useye).samples.rawx',trial(trr).(useye).samples.rawy',caldata)
-    plot(xgaz-(win.rect(3)-size(im,2))/2,ygaz-(win.rect(4)-size(im,1))/2,'.r')
-    doimage(gcf,['/Users/jossando/trabajo/India/result/' sid '/'],'png',[trial(trr).category.msg '_' trial(trr).image.msg],1);
+    
+%     indxdrift = find(trial(trr).(useye).samples.time<0)
+%     xdrift  = win.rect(3)/2-median(xgaz(indxdrift));
+%     ydrift  = win.rect(4)/2-median(ygaz(indxdrift));
+%     xgaz    = xgaz-xdrift;
+%     ygaz    = ygaz-ydrift;
+%     
+    plot(xgaz-(win.rect(3)-size(im,2))/2,ygaz-(win.rect(4)-size(im,1))/2,'.b')
+%      doimage(gcf,['/Users/jossando/trabajo/India/result/' sid '/'],'png',[trial(trr).image.msg],1);
     catch
         trr
     end

@@ -40,7 +40,7 @@ win.manual_select           = 1;
 
 % Blocks and trials
 win.exp_trials              = 56;
-win.t_perblock              = 14;
+win.t_perblock              = 28;
 win.calib_every             = 1; 
 win.trial_length            = 4;
 % Device input during the experiment
@@ -104,7 +104,7 @@ PsychImaging('AddTask', 'General', 'UseVirtualFramebuffer');
 [win.hndl, win.rect]        = PsychImaging('OpenWindow',win.whichScreen,win.bkgcolor);   % starts PTB screen
 Priority(MaxPriority(win.hndl));
 pscr                        = Screen('Resolution',win.whichScreen);
-win.ifi                     = 1/60;           %TODO: 1/pscr.hz;
+win.ifi                     = 1/pscr.hz;
 
 win.res                     = win.rect(3:4);%[1366 768];%[1920 1080];%                                  %  horizontal x vertical resolution [pixels]
 win.pixxdeg                 = win.res(1)/(2*180/pi*atan(win.wdth/2/win.Vdst));% 
@@ -157,6 +157,9 @@ for nT = 1:nTrials                                                          % lo
         b = b+1;
         EyelinkDoTrackerSetup(win.el);
         [caldata,calibraw,dotinfo] = do_calib(win,nT,win.DoDummyMode);
+        win.calib(b).caldata = caldata;
+        win.calib(b).calibraw = calibraw;
+        win.calib(b).dotinfo = dotinfo;
         Screen('Flip', win.hndl);
         win.response(nT) = NaN;
         win.result(nT)   = NaN;
@@ -230,41 +233,43 @@ for nT = 1:nTrials                                                          % lo
          end
     end
     
-    Eyelink('StopRecording');
-    Eyelink('WaitForModeReady', 50);
-    
-    if win.pairOrder(nT)==2
-       if strcmp(exptype,'ID')
-            Screen('DrawText', win.hndl, 'SAME IDENTITY (S)  DIFFERENT IDENTITY (D)', win.cntr(1), win.cntr(2), win.foregroundcolour);
-       elseif strcmp(exptype,'EM')
-            Screen('DrawText', win.hndl, 'SAME EMOTION (S)  DIFFERENT EMOTION (D)', win.cntr(1), win.cntr(2), win.foregroundcolour);
-       end
-        Screen('Flip', win.hndl); 
-        while 1
-            [keyIsDown,seconds,keyCode] = KbCheck;
-             if keyIsDown
-                if keyCode(KbName('S')) 
-                    win.response(nT) = 1;
-                    break
-                end
-                if keyCode(KbName('D')) 
-                    win.response(nT) = 2;
-                    break
-                end
-             end
-        end
-        if strcmp(exptype,'ID')
-            if (ismember(win.ttype(nT),[1 2]) && win.response(nT) == 1) || ...
-                    (ismember(win.ttype(nT),[3 4]) && win.response(nT) == 2) 
-                win.result(nT) = 1;
-            elseif (ismember(win.ttype(nT),[1 2]) && win.response(nT) == 2) || ...
-                    (ismember(win.ttype(nT),[3 4]) && win.response(nT) == 1) 
-                win.result(nT) = 0; 
+    if ~escape_flag
+        Eyelink('StopRecording');
+        Eyelink('WaitForModeReady', 50);
+
+        if win.pairOrder(nT)==2
+           if strcmp(exptype,'ID')
+                Screen('DrawText', win.hndl, 'SAME IDENTITY (S)  DIFFERENT IDENTITY (D)', win.cntr(1), win.cntr(2), win.foregroundcolour);
+           elseif strcmp(exptype,'EM')
+                Screen('DrawText', win.hndl, 'SAME EMOTION (S)  DIFFERENT EMOTION (D)', win.cntr(1), win.cntr(2), win.foregroundcolour);
+           end
+            Screen('Flip', win.hndl); 
+            while 1
+                [keyIsDown,seconds,keyCode] = KbCheck;
+                 if keyIsDown
+                    if keyCode(KbName('S')) 
+                        win.response(nT) = 1;
+                        break
+                    end
+                    if keyCode(KbName('D')) 
+                        win.response(nT) = 2;
+                        break
+                    end
+                 end
             end
+            if strcmp(exptype,'ID')
+                if (ismember(win.ttype(nT),[1 2]) && win.response(nT) == 1) || ...
+                        (ismember(win.ttype(nT),[3 4]) && win.response(nT) == 2) 
+                    win.result(nT) = 1;
+                elseif (ismember(win.ttype(nT),[1 2]) && win.response(nT) == 2) || ...
+                        (ismember(win.ttype(nT),[3 4]) && win.response(nT) == 1) 
+                    win.result(nT) = 0; 
+                end
+            end
+        else
+             win.response(nT) = NaN;
+             win.result(nT)   = NaN; 
         end
-    else
-         win.response(nT) = NaN;
-         win.result(nT)   = NaN; 
     end
     if escape_flag
         break
