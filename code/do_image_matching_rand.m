@@ -1,4 +1,6 @@
+
 %%
+if strcmp(exptype,'ID') || strcmp(exptype,'EM')
 % Face Identity and emotion database are in folder 33
 % filenames are A<gender><subjid><emotion>S_masked<mdiff>.jpg
 % gender is 'F' or 'M'
@@ -11,9 +13,9 @@ sIDf   = [2,7,13,15,22,27,29];
 sIDm   = [5,6,7,11,27,29,31];
 EMstr  = {'AF','AN','DI','HA','NE','SA','SU'};
 mdifM  = '';
-mdifF  = '2';
+mdifF  = '3';
 
-if strcmp(exptype,'ID')
+
 % there is 4 type of trial for identity matching:
 %  ttype
 % -  1  same identity/same emotion (only 7 posible trial per gender)
@@ -70,7 +72,62 @@ if strcmp(exptype,'ID')
     end
     ttype = [ttype,4*ones(1,14)];
 end
+%%
+if strcmp(exptype,'OBJ')
+    load('objectList')
+    % first randomixation for task 'which one was teh animal?
+%     imnames     = {imList.name};
+%     imanimals    = strmatch('animal',imnames);
+%     imobjects    = setdiff(1:length(imnames),imanimals);
+%     randanim     = randperm(length(imanimals));
+%     randobjects  = randperm(length(imanimals));
+%     firstpairs   = [imnames(imanimals(randanim(1:length(randanim)/2))),...
+%                      imnames(imobjects(randobjects(1:length(randobjects)/2)))];
+%     secondpairs   = [imnames(imobjects(randobjects(length(randobjects)/2+1:end))),...
+%                         imnames(imanimals(randanim(length(randanim)/2+1:end)))];
+%     imFileNames   = reshape([firstpairs;secondpairs],1,length(imnames));
+%     ttype         = [5*ones(1,length(imFileNames)/2),6*ones(1,length(imFileNames)/2)];
 
+% second randomization with animals and food, 'are the same type or not?'
+% 7 CATEGORIES with 7 instances: animal (bird), chair, food (fruit), gitar, house, plant,
+% telephone
+    clear imFileNames
+     imnames     = {imList.name};
+     imcats      = reshape(repmat(1:7,7,1),1,length(imnames));
+%      imanimals   = strmatch('animal',imnames);
+%      imfood      = strmatch('food',imnames);
+     %SC/SI same category same image (7 trial, 7 images repeated) 
+     for ic = unique(imcats)
+         auxind = find(imcats==ic);
+         auxind = auxind(randsample(1:7,1));
+         imFileNames(1,ic) = imnames(auxind);
+         imFileNames(2,ic) = imnames(auxind);
+         imcats(auxind)  = [];
+         imnames(auxind) = [];
+     end
+     ttype = 5*ones(1,14);  % same category same image
+     %SC/DI same category diferent image (7 trial, 14 images)
+      for ic = unique(imcats)
+         auxind = find(imcats==ic);
+         auxind = auxind(randsample(1:6,2));
+         imFileNames(1,7+ic) = imnames(auxind(1));
+         imFileNames(2,7+ic) = imnames(auxind(2));
+         imcats(auxind)  = [];
+         imnames(auxind) = [];
+      end
+     ttype = [ttype,6*ones(1,14)];  % same category different image
+     %DC/DI different category, different image (14 trials, 28 images)
+     while 1
+        auxind = reshape(randsample(1:28,28),2,14);
+        if ~any(diff(imcats(auxind))==0)
+            break
+        end
+     end
+    imFileNames = reshape([imFileNames,imnames(auxind)],1,56);
+    ttype = [ttype,7*ones(1,28)];  % different category different image
+end
+
+%%
 win.image_rnd     = randsample(1:2:win.exp_trials,win.exp_trials/2);
 win.image         = reshape([imFileNames(win.image_rnd);imFileNames(win.image_rnd+1)],1,win.exp_trials);
 win.ttype         = reshape([ttype(win.image_rnd);ttype(win.image_rnd+1)],1,win.exp_trials);

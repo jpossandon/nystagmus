@@ -23,17 +23,17 @@ win.DoDummyMode             = 0;                                            % (1
 % Screen parameters
 win.whichScreen             = 0;                                            % (CHANGE?) here we define the screen to use for the experiment, it depend on which computer we are using and how the screens are conected so it might need to be changed if the experiment starts in the wrong screen
 win.FontSZ                  = 20;                                           % font size
-win.bkgcolor                = [153 153 153]; 
-win.foregroundcolour        = [0 0 0]; % CLUT color idx (for Psychtoolbox functions)
-win.msgfontcolour           = [0 0 0];% screen background color, 127 gray
+win.bkgcolor                = [0 0 0]; 
+win.foregroundcolour        = [255 255 255]; % CLUT color idx (for Psychtoolbox functions)
+win.msgfontcolour           = [255 255 255];% screen background color, 127 gray
 win.Vdst                    = 66;                                           % (!CHANGE!) viewer's distance from screen [cm]         
 win.wdth                    = 42;%51;                                           %  51X28.7 cms is teh size of Samsung Syncmaster P2370 in BPN lab EEG rechts
 win.hght                    = 23;%28.7;                                         % 42x23 is HP screen in eyetrackin clinic
 win.dotSize                 = 4; % [% of window width]
 win.calibType               = 'HV9';
-win.calibration_type        = 'sample';
+win.calibration_type        = 'saccade';
 win.dotflickfreq            = 5;                                          % Hz
-win.margin                  = [20 16];
+win.margin                  = [30 20];
 
 win.waitframes              = 1;
 win.manual_select           = 1;
@@ -54,11 +54,11 @@ if ismac                                                                    % th
     exp_path                = '/Users/jossando/trabajo/India/';              % path in my mac
 else
 %    exp_path                = 'C:\Users\bpn\Documents\jpossandon\nystagmus\';
-    exp_path                = 'C:\EXPERIMENTS\freeviewing\';
+    exp_path                = 'C:\EXPERIMENTS\OSSANDON\freeviewing\';
 end
 
 % Input Dialog Box
-prompt     = {'Subject Number:','Type (1-identity; 2-emotion)'};
+prompt     = {'Subject Number:','Type (1-identity; 2-emotion; 3-object)'};
 dlg_title  = 'Image Matching';
 num_lines  = 1;
 defaultans = {'',''};
@@ -71,6 +71,8 @@ if strcmp(answer{2},'1')
     exptype  = 'ID';
 elseif strcmp(answer{2},'2')
     exptype  = 'EM';
+elseif strcmp(answer{2},'3')
+    exptype  = 'OBJ';
 end
 win.fnameEDF = sprintf('s%03d%s.EDF',str2num(win.s_n),exptype);       % EDF name can be only 8 letters long, so we can have numbers only between 01 and 99
 pathEDF      = fullfile(exp_path,'data',sprintf('s%03d',str2num(win.s_n)),filesep);                           % where the EDF files are going to be saved
@@ -111,7 +113,7 @@ win.pixxdeg                 = win.res(1)/(2*180/pi*atan(win.wdth/2/win.Vdst));%
 
 [win.cntr(1), win.cntr(2)]  = WindowCenter(win.hndl);                        % get where is the display screen center
 Screen('BlendFunction',win.hndl, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);     % enable alpha blending for smooth drawing
-% HideCursor(win.hndl);        %TODO: uncomment                                                   % this to hide the mouse
+HideCursor(win.hndl);        %TODO: uncomment                                                   % this to hide the mouse
 Screen('TextSize', win.hndl, win.FontSZ);                                   % sets teh font size of the text to be diplayed
 KbName('UnifyKeyNames');                                                    % recommended, called again in EyelinkInitDefaults
 win.start_time              = clock;
@@ -141,7 +143,11 @@ Eyelink('Message','DISPLAY_COORDS %d %d %d %d', 0, 0, wrect(1), wrect(2));  % wr
 % Randomization
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 do_image_matching_rand
-
+if strcmp(exptype,'ID') || strcmp(exptype,'EM')
+    imfolder = '33';
+elseif strcmp(exptype,'OBJ')
+    imfolder = '34';
+end
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % THE ACTUAL EXPERIMENT
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -154,18 +160,58 @@ for nT = 1:nTrials                                                          % lo
     % BLOCK START
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     if  win.block_start(nT) == 1                                                % if it is a trial that starts a block   
+         EyelinkDoTrackerSetup(win.el);
+         Screen('DrawText', win.hndl, sprintf('Block  %d/%d FINISHED  GO TO CALIBRATION (C)  CONTINUE TO EXPERIMENT (E)',b,nBlocks), 100, win.cntr(2), win.foregroundcolour);
+         Screen('Flip', win.hndl);
+         while 1
+                [keyIsDown,seconds,keyCode] = KbCheck;
+                 if keyIsDown
+                    if keyCode(KbName('C')) 
+                        calibrate = 1;
+                        break
+                    end
+                    if keyCode(KbName('E')) 
+                        calibrate = 0;
+                        break
+                    end
+                 end
+         end
+         Screen('Flip', win.hndl);
+         WaitSecs(1.5)
+        
         b = b+1;
-        EyelinkDoTrackerSetup(win.el);
-        [caldata,calibraw,dotinfo] = do_calib(win,nT,win.DoDummyMode);
-        win.calib(b).caldata = caldata;
-        win.calib(b).calibraw = calibraw;
-        win.calib(b).dotinfo = dotinfo;
+        if calibrate
+            Screen('DrawText', win.hndl, 'CALIBRATION TYPE: SAMPLE(Z), SACCADE (C) OR BOTH (B)', 100, win.cntr(2), win.foregroundcolour);
+            Screen('Flip', win.hndl);
+            while 1
+                [keyIsDown,seconds,keyCode] = KbCheck;
+                 if keyIsDown
+                    if keyCode(KbName('z')) 
+                        win.calibration_type        = 'sample';
+                        break
+                    end
+                    if keyCode(KbName('c')) 
+                         win.calibration_type        = 'saccade';
+                        break
+                    end
+                    if keyCode(KbName('b')) 
+                         win.calibration_type        = 'both';
+                        break
+                    end
+                 end
+            end
+            [caldata,calibraw,dotinfo] = do_calib(win,nT,win.DoDummyMode);
+            win.calib(b).caldata = caldata;
+            win.calib(b).calibraw = calibraw;
+            win.calib(b).dotinfo = dotinfo;
+        end
         Screen('Flip', win.hndl);
         win.response(nT) = NaN;
         win.result(nT)   = NaN;
         continue
     else
-        image           = imread(fullfile(exp_path,'images','33',...
+    
+        image           = imread(fullfile(exp_path,'images',imfolder,...
                                         win.image{nT}));      
         postextureIndex	= Screen('MakeTexture', win.hndl, image);   % makes the texture of this trial image
     end
@@ -242,6 +288,8 @@ for nT = 1:nTrials                                                          % lo
                 Screen('DrawText', win.hndl, 'SAME IDENTITY (S)  DIFFERENT IDENTITY (D)', win.cntr(1), win.cntr(2), win.foregroundcolour);
            elseif strcmp(exptype,'EM')
                 Screen('DrawText', win.hndl, 'SAME EMOTION (S)  DIFFERENT EMOTION (D)', win.cntr(1), win.cntr(2), win.foregroundcolour);
+           elseif strcmp(exptype,'OBJ')
+                Screen('DrawText', win.hndl, 'SAME CATEGORY (S)  DIFFERENT CATEGORY (D)', win.cntr(1), win.cntr(2), win.foregroundcolour);
            end
             Screen('Flip', win.hndl); 
             while 1
@@ -265,6 +313,22 @@ for nT = 1:nTrials                                                          % lo
                         (ismember(win.ttype(nT),[3 4]) && win.response(nT) == 1) 
                     win.result(nT) = 0; 
                 end
+            elseif strcmp(exptype,'EM')
+                 if (ismember(win.ttype(nT),[1 3]) && win.response(nT) == 1) || ...
+                        (ismember(win.ttype(nT),[2 4]) && win.response(nT) == 2) 
+                    win.result(nT) = 1;
+                elseif (ismember(win.ttype(nT),[1 3]) && win.response(nT) == 2) || ...
+                        (ismember(win.ttype(nT),[2 4]) && win.response(nT) == 1) 
+                    win.result(nT) = 0; 
+                 end
+            elseif strcmp(exptype,'OBJ')
+                 if (ismember(win.ttype(nT),[5,6]) && win.response(nT) == 1) || ...
+                        (ismember(win.ttype(nT),[7]) && win.response(nT) == 2) 
+                    win.result(nT) = 1;
+                elseif (ismember(win.ttype(nT),[5,6]) && win.response(nT) == 2) || ...
+                        (ismember(win.ttype(nT),[7]) && win.response(nT) == 1) 
+                    win.result(nT) = 0; 
+                end    
             end
         else
              win.response(nT) = NaN;
@@ -302,8 +366,6 @@ if strcmp(saveData,'Yes')
         end
     end
 end
-
-% 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % CLOSING ALL DEVICES, PORTS, ETC
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -323,3 +385,17 @@ Screen('Preference','VisualDebugLevel', prevVisDbg);                        % re
 % fclose(obj);
 % % close the serial port
 ListenChar(1)                                                               % restore MATLAB keyboard listening (on command window)
+
+%%
+% feedback
+ttypesLabels = {'SI/SE','SI/DE','DI/SE','DI/DE','ANIMAL 1ST','ANIMAL 2ND'}; 
+    
+if strcmp(exptype,'ID') || strcmp(exptype,'EM')
+    ttts = 1:4;
+elseif strcmp(exptype,'OBJ')
+    ttts = 5:6;
+end
+for ttt=ttts
+    auxperf = win.result(win.ttype(1:length(win.result))==ttt & win.pairOrder(1:length(win.result))==2 & ones(1,length(win.result)));
+    fprintf('\n%s performance %s: %d/%d',exptype,ttypesLabels{ttt},sum(auxperf),length(auxperf))
+end 

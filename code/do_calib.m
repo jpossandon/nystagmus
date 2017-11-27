@@ -39,12 +39,12 @@ function [caldata,calibraw,dotinfo] = do_calib(win,TRIALID,dummy)
 HideCursor;
 
 % make sound clips
-Fs = 2000; t = 0:1/2e4:1; s1 = 1/2*cos(2*pi*5000*t);
-Fs = 2000; t = 0:1/2e4:1; s2 = 1/2*cos(2*pi*3000*t);
-pahandle1 = PsychPortAudio('Open', [], [], 0, Fs, 1);
-pahandle2 = PsychPortAudio('Open', [], [], 0, Fs, 1);
-PsychPortAudio('FillBuffer', pahandle1, s1);
-PsychPortAudio('FillBuffer', pahandle2, s2);
+% Fs = 2000; t = 0:1/2e4:1; s1 = 1/2*cos(2*pi*5000*t);
+% Fs = 2000; t = 0:1/2e4:1; s2 = 1/2*cos(2*pi*3000*t);
+% pahandle1 = PsychPortAudio('Open', [], [], 0, Fs, 1);
+% pahandle2 = PsychPortAudio('Open', [], [], 0, Fs, 1);
+% PsychPortAudio('FillBuffer', pahandle1, s1);
+% PsychPortAudio('FillBuffer', pahandle2, s2);
 
 mPix                        = win.rect(3:4).*win.margin/100;
 if strcmp(win.calibType,'HV9')                                  
@@ -129,9 +129,7 @@ while current_position < length(indxs)+1
     if exist('calibraw')
         clear calibraw
     else
-        calibraw.rawx=[];
-        calibraw.rawy=[];
-        calibraw.time=[];
+        calibraw = struct('rawx',[],'rawy',[],'time',[]);
     end
 
     if ~exist('calibsac')
@@ -160,20 +158,12 @@ while current_position < length(indxs)+1
 
                 % if we received data from one point
                 % make manual selection per eye
-                if win.manual_select
-                    [xsample,ysample,timesample,accept,start_time,end_time] = showandSelect(win,calibraw,calibsac);
-                end
-              
-                break;
+                [xsample,ysample,timesample,accept,start_time,end_time] = showandSelect(win,calibraw,calibsac);
+                 break;
                 
-%             elseif keyCode(KbName('LeftArrow'))
-%                 current_position = current_position-1;
-%                 if current_position==0
-%                     current_position=1;
-%                 end
-%                 break;
+            elseif keyCode(KbName('Space'))  
                 
-            elseif keyCode(KbName('Space'))    
+                % switch data collection on/off
                 getsamples=getsamples*-1;
 
                 % if this is not the first time for this position
@@ -186,41 +176,18 @@ while current_position < length(indxs)+1
                 end
                 
                 if getsamples>0
-                    datacollectionstarted=1;
-                    %PsychPortAudio('Start', pahandle1, 1, 0, 1, 0.25);
-                    %PsychPortAudio('Stop', pahandle1);
+                    datacollectionstarted = 1;
                 elseif getsamples<0 && datacollectionstarted
-                    wehavedata=1;
-                    
-                    save('datac','datacollectiontester')
-                    
-                    %PsychPortAudio('Start', pahandle2, 1, 0, 1, 0.25);
-                    %PsychPortAudio('Stop', pahandle2);
+                    %WaitSecs(.5);
+                    wehavedata = 1;
                 end
-                
-%             elseif keyCode(KbName('BackSpace'))
-%                 calibraw(ey).time(:,current_n:n)  = [];
-%                 calibraw(ey).rawx(:,current_n:n)  = [];                                   %px,py are raw data, gx,gy gaze data; hx,hy headref, data from both eye might be included. The easiest would be to use the uncalibrated GAZE gx,gy data             
-%                 calibraw(ey).rawy(:,current_n:n)  = [];               
-% 
-%                 n        = current_n;
-%                 nv       = current_n;
             end
             KbReleaseWait;
         end
 
         if getsamples>0
             if ~dummy
-%                 if Eyelink('NewFloatSampleAvailable') > 0
-%                     data = Eyelink('NewestFloatSample');
-% %                     datacollectiontester{end+1}=data;
-%                 end
                 [data] = get_ETdataraw;
-%                 if dataoldtype ==200
-%                     data.time
-% %                     dataold.entime
-%                     diftime = dataold.time-data.time
-%                 end
             else        
                 [mx, my]  = GetMouse(win.hndl);
                 data.time = GetSecs*1000;
@@ -230,7 +197,6 @@ while current_position < length(indxs)+1
             end
 
             if data.type==200   % samples
-                200;
                 for ey = 1:size(data.px,2)
                     if validation_flag == 0
                         calibraw(ey).time(n)  = data.time;
@@ -242,20 +208,20 @@ while current_position < length(indxs)+1
 %                         validraw(ey).rawy(:,nv) = data.py(ey);
                     end
                 end
-                
-                %%%------ what if not getting samples
-                % ok, but we are getting samples "type=200"
-                n  = n+1;                                                     % we need different indexes to fill correctly the different structures
+                n  = n+1;                                                     
                 nv = nv+1;
+                
             elseif data.type==6   % end saccade
-                6;
-                sEye = data.eye+1; %%% !!! isn't this now always using one (the same) eye? ANSWeR: I do not think so, saccade and fication events are different lines for each eye
+                sEye = data.eye+1; 
                 if validation_flag == 0
                     calibsac(sEye).start(:,ns(sEye)) = data.sttime;
                     calibsac(sEye).end(:,ns(sEye))   = data.entime;
                     calibsac(sEye).eye(:,ns(sEye))   = sEye;
+                    calibsac(sEye).gstx(:,ns(sEye))  = data.gstx;                                   %px,py are raw data, gx,gy gaze data; hx,hy headref            
+                    calibsac(sEye).gsty(:,ns(sEye))  = data.gsty;                    
                     calibsac(sEye).genx(:,ns(sEye))  = data.genx;                                   %px,py are raw data, gx,gy gaze data; hx,hy headref            
                     calibsac(sEye).geny(:,ns(sEye))  = data.geny;
+                    
     %             else
     %                 validsac(sEye).start(:,nsv(sEye)) = data.sttime;
     %                 validsac(sEye).end(:,nsv(sEye))   = data.entime;
@@ -263,8 +229,8 @@ while current_position < length(indxs)+1
     %                 validsac(sEye).genx(:,nsv(sEye))  = data.genx;                                   %px,py are raw data, gx,gy gaze data; hx,hy headref            
     %                 validsac(sEye).geny(:,nsv(sEye))  = data.geny;
                 end
-                    ns(sEye) = ns(sEye)+1;
-                    nsv(sEye) = nsv(sEye)+1;
+                    ns(sEye) = ns(sEye)+1
+                    nsv(sEye) = nsv(sEye)+1
                  
             end % save data
         end % if get samples
@@ -371,6 +337,8 @@ for ey = 1:eyes_with_sacc_data    % loop through eyes that got saccade data
 
     for pt = 1:size(dotinfo.dot_order,1)
        Screen('DrawText', win.hndl,num2str(dotinfo.dot_order(pt)),caldata(ey).correctedDotPos(1,dotinfo.dot_order(pt)),caldata(ey).correctedDotPos(2,dotinfo.dot_order(pt)),[255 255 255]);
+      %plot here uncorrected dot position to see the order of the
+      %calibrtion grid
     end
 
     % save data for debugging
@@ -417,8 +385,8 @@ if ~dummy
 end
 
 WaitSecs(0.01);
-PsychPortAudio('Close', pahandle1);
-PsychPortAudio('Close', pahandle2); 
+% PsychPortAudio('Close', pahandle1);
+% PsychPortAudio('Close', pahandle2); 
 
 
 end
