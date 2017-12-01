@@ -1,4 +1,4 @@
-function [output_x,output_y,output_time,accept,start_time,end_time] = showandSelect(win,calibraw,calibsac)
+function [output_x,output_y,output_time,accept,start_time,end_time] = showandSelect(win,calibraw,calibsac,dotinfo)
 
 save('test1','calibraw','calibsac')
 
@@ -7,8 +7,6 @@ horcol         = [0 0 255];
 vertcol        = [0 255 0];
 horcol_select  = [0 255 255];
 vertcol_select = [255 255 0];
-
-
 
 for ey=1:2
     
@@ -28,7 +26,7 @@ for ey=1:2
         % remove missing values
         xmiss     = abs(xsample)==30000 | abs(xsample)==32768;
         ymiss     = abs(ysample)==30000 | abs(ysample)==32768;
-        for rmv = 1:4   % remove four valuea around missing
+        for rmv = 1:10   % remove ten sample around missing
             xmiss = sum([xmiss;[diff(xmiss) 0];[0 fliplr(diff(fliplr(xmiss)))]]~=0)>0;
             ymiss = sum([ymiss;[diff(ymiss) 0];[0 fliplr(diff(fliplr(ymiss)))]]~=0)>0;
         end
@@ -49,7 +47,16 @@ for ey=1:2
         xpixmax = .90*win.rect(3);
         ypixmin = .05*win.rect(4);
         ypixmax = .40*win.rect(4);
-
+        cuad4Rect = [win.rect(3).*.6,win.rect(4).*.6,win.rect(3).*.9,win.rect(4).*.9];
+        
+        if any(dotinfo.rawCalib(ey).pos)
+            rawCalibToplot(:,1) = ((dotinfo.rawCalib(ey).pos(:,1)+30000)/60000).*(cuad4Rect(3)-cuad4Rect(1))+cuad4Rect(1);
+            rawCalibToplot(:,2) = ((dotinfo.rawCalib(ey).pos(:,2)+30000)/60000).*(cuad4Rect(4)-cuad4Rect(2))+cuad4Rect(2);
+        end
+%         if any(dotinfo.rawCalib(ey).pos)
+%             rawValidToplot(:,1) = ((dotinfo.rawCalib(ey).pos(:,1)+30000)/60000).*(cuad4Rect(3)-cuad4Rect(1))+cuad4Rect(1);
+%             rawValidToplot(:,2) = ((dotinfo.rawCalib(ey).pos(:,2)+30000)/60000).*(cuad4Rect(4)-cuad4Rect(2))+cuad4Rect(2);
+%         end
         % create xvalues
         % teh problem here is that values are not well spaced
          xpix = linspace(xpixmin,xpixmin+xpixmax,length(xsample));
@@ -58,32 +65,8 @@ for ey=1:2
         ypix_xraw =  ypixmin + (xsample./max(bigest_sample)).* ypixmax;
         ypix_yraw =  ypixmin + (ysample./max(bigest_sample)).* ypixmax;
 
-        
-        % draw instructions
-        if ey==1        
-            DrawFormattedText(win.hndl, 'LEFT EYE', win.rect(3)*.25, win.rect(4)*.6, [255 255 255]);
-        else
-            DrawFormattedText(win.hndl, 'RIGHT EYE', win.rect(3)*.25, win.rect(4)*.6, [255 255 255]);
-        end
-        DrawFormattedText(win.hndl, 'HORIZONTAL TRACE', win.rect(3)*.25, win.rect(4)*.65, horcol);
-        DrawFormattedText(win.hndl, 'VERTICAL TRACE', win.rect(3)*.25, win.rect(4)*.7, vertcol);
-        
-        % draw traces
-        Screen('DrawDots', win.hndl, [xpix; ypix_xraw],2,horcol,[0 0],1);
-        Screen('DrawDots', win.hndl, [xpix; ypix_yraw],2,vertcol,[0 0],1); 
-        
-        % draw timescale
-        Screen('DrawLine', win.hndl, [255 255 255], xpixmin, 1, xpixmin+xpixmax, 1, 2);
-        Screen('DrawLine', win.hndl, [255 255 255], xpixmin, 1, xpixmin, 10, 2);
-        Screen('DrawText', win.hndl, num2str(round(tsample(1))), xpixmin, 12);
-        
-        % draw box for data
-        Screen('FrameRect', win.hndl, [55 55 55],[xpixmin-5,ypixmin-5,xpixmin+xpixmax+5,ypixmin+ypixmax+5], 2);
-        for ii=1:10
-            Screen('DrawLine', win.hndl, [255 255 255], xpixmin+xpixmax*(ii/10), 1, xpixmin+xpixmax*(ii/10), 10, 2);
-            Screen('DrawText', win.hndl, num2str(round(tsample(round(ii.*length(tsample)./10)))),xpixmin+ xpixmax*(ii/10), 12, [255 255 255]);
-        end
-        
+        showandselectboxbasics
+
         if isstruct(calibsac)
             if ey == 1 || (ey==2 && length(calibsac)==2)
                 saccades = [calibsac(ey).start' calibsac(ey).end' calibsac(ey).gstx' calibsac(ey).genx' ...
@@ -156,34 +139,13 @@ for ey=1:2
         ypix_xraw_select =  ypixmin + (xsample_select./max(bigest_sample)) .* ypixmax;
         ypix_yraw_select =  ypixmin + (ysample_select./max(bigest_sample)) .* ypixmax;
 
-        if ey==1        
-            DrawFormattedText(win.hndl, 'LEFT EYE', win.rect(3)*.25, win.rect(4)*.6, [255 255 255]);
-        else
-            DrawFormattedText(win.hndl, 'RIGHT EYE', win.rect(3)*.25, win.rect(4)*.6, [255 255 255]);
-        end
-        DrawFormattedText(win.hndl, 'HORIZONTAL TRACE', win.rect(3)*.25, win.rect(4)*.65, horcol);
-        DrawFormattedText(win.hndl, 'VERTICAL TRACE', win.rect(3)*.25, win.rect(4)*.7, vertcol);        
-        % draw uncorrected data again
-        Screen('DrawDots', win.hndl, [xpix; ypix_xraw],2,horcol,[0 0],1);
-        Screen('DrawDots', win.hndl, [xpix; ypix_yraw],2,vertcol,[0 0],1);
+        showandselectboxbasics
         % draw selected range of samples
         Screen('DrawDots', win.hndl, [xpix_select; ypix_xraw_select],2,horcol_select,[0 0],1);
         Screen('DrawDots', win.hndl, [xpix_select; ypix_yraw_select],2,vertcol_select,[0 0],1);    
         Screen('DrawLine', win.hndl, [255 255 255], xpix_select(1), ypixmin, xpix_select(1), ypixmin+ypixmax, 1);
         Screen('DrawLine', win.hndl, [255 255 255], xpix_select(end), ypixmin, xpix_select(end), ypixmin+ypixmax, 1);
-
-        % draw timescale
-        Screen('DrawLine', win.hndl, [255 255 255], xpixmin, 1, xpixmin+xpixmax, 1, 2);
-        Screen('DrawLine', win.hndl, [255 255 255], xpixmin, 1, xpixmin, 10, 2);
-        Screen('DrawText', win.hndl, num2str(round(tsample(1))), xpixmin, 12);
-        
-        % draw box
-        Screen('FrameRect', win.hndl, [55 55 55],[xpixmin-5,ypixmin-5,xpixmin+xpixmax+5,ypixmin+ypixmax+5], 2);
-        for ii=1:10
-            Screen('DrawLine', win.hndl, [255 255 255], xpixmin+xpixmax*(ii/10), 1, xpixmin+xpixmax*(ii/10), 10, 2);
-            Screen('DrawText', win.hndl, num2str(round(tsample(round(ii.*length(tsample)./10)))),xpixmin+ xpixmax*(ii/10), 12, [255 255 255]);
-        end
-        
+      
         %%% draw saccades
          if isstruct(calibsac)
             if ey == 1 || (ey==2 && length(calibsac)==2)
@@ -242,15 +204,7 @@ for ey=1:2
     start_time                  = calibraw(ey).time(1);
     end_time                    = calibraw(ey).time(end);
     
-    
 end % for each ey
-
-
-
-
-
-
-
 
 
 

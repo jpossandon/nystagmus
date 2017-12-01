@@ -81,7 +81,7 @@ for pt = 1:size(dotinfo.dot_order,1)
         aux_saccT = [];
         for st = 1:length(aux_sacc)
             aux_saccT     = [aux_saccT,find(traw>saccades.start(aux_sacc(st)) & ...      % find the last raw sample corresponding to each saccade 
-                             traw<saccades.end(aux_sacc(st)),1,'last')];
+                             traw<=saccades.end(aux_sacc(st))+2,1,'last')];
         end
     end
     
@@ -104,7 +104,7 @@ for pt = 1:size(dotinfo.dot_order,1)
             xyR(1,dotinfo.dot_order(pt)) = nanmedian(xraw(aux_calib)); 
             xyR(2,dotinfo.dot_order(pt)) = nanmedian(yraw(aux_calib)); 
         elseif strcmp(method,'saccade')
-            xyR(1,dotinfo.dot_order(pt)) = nanmedian(xraw(aux_saccT)); 
+             xyR(1,dotinfo.dot_order(pt)) = nanmedian(xraw(aux_saccT)); 
             xyR(2,dotinfo.dot_order(pt)) = nanmedian(yraw(aux_saccT)); 
         elseif strcmp(method,'both') 
             xyR(1,dotinfo.dot_order(pt)) = mean([nanmedian(xraw(aux_calib)),nanmedian(xraw(aux_saccT))]); 

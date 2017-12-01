@@ -177,11 +177,13 @@ for nT = 1:nTrials                                                          % lo
                  end
          end
          Screen('Flip', win.hndl);
-         WaitSecs(1.5)
+         while KbCheck
+         end
+         WaitSecs(.5)
         
         b = b+1;
         if calibrate
-            Screen('DrawText', win.hndl, 'CALIBRATION TYPE: SAMPLE(Z), SACCADE (C) OR BOTH (B)', 100, win.cntr(2), win.foregroundcolour);
+            Screen('DrawText', win.hndl, 'CALIBRATION TYPE: SAMPLE (Z), SACCADE (C) OR BOTH (B)', 100, win.cntr(2), win.foregroundcolour);
             Screen('Flip', win.hndl);
             while 1
                 [keyIsDown,seconds,keyCode] = KbCheck;
@@ -200,10 +202,10 @@ for nT = 1:nTrials                                                          % lo
                     end
                  end
             end
-            [caldata,calibraw,dotinfo] = do_calib(win,nT,win.DoDummyMode);
-            win.calib(b).caldata = caldata;
-            win.calib(b).calibraw = calibraw;
-            win.calib(b).dotinfo = dotinfo;
+            [caldata,dotinfo] = do_calib(win,nT,win.DoDummyMode);
+            win.calib(b).caldata  = caldata;
+%             win.calib(b).calibraw = calibraw;
+            win.calib(b).dotinfo  = dotinfo;
         end
         Screen('Flip', win.hndl);
         win.response(nT) = NaN;
