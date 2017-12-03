@@ -23,12 +23,12 @@ win.DoDummyMode             = 0;                                            % (1
 % Screen parameters
 win.whichScreen             = 0;                                            % (CHANGE?) here we define the screen to use for the experiment, it depend on which computer we are using and how the screens are conected so it might need to be changed if the experiment starts in the wrong screen
 win.FontSZ                  = 20;                                           % font size
-win.bkgcolor                = [0 0 0]; 
+win.bkgcolor                = 0;%[0 0 0]; 
 win.foregroundcolour        = [255 255 255]; % CLUT color idx (for Psychtoolbox functions)
 win.msgfontcolour           = [255 255 255];% screen background color, 127 gray
-win.Vdst                    = 66;                                           % (!CHANGE!) viewer's distance from screen [cm]         
-win.wdth                    = 42;%51;                                           %  51X28.7 cms is teh size of Samsung Syncmaster P2370 in BPN lab EEG rechts
-win.hght                    = 23;%28.7;                                         % 42x23 is HP screen in eyetrackin clinic
+win.Vdst                    = 60;                                           % (!CHANGE!) viewer's distance from screen [cm]         
+win.wdth                    = 52.5;%51;                                           %  51X28.7 cms is teh size of Samsung Syncmaster P2370 in BPN lab EEG rechts
+win.hght                    = 29.5;%28.7;                                         % 42x23 is HP screen in eyetrackin clinic
 win.dotSize                 = 4; % [% of window width]
 win.calibType               = 'HV9';
 win.calibration_type        = 'saccade';

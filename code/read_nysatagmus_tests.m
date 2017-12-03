@@ -10,11 +10,12 @@ sFc = meta.sF/1000;
         % open (60s)
         %
         %
-        titlelabels = {'RightEye','LeftEye','BothEye'};
+%         titlelabels = {'RightEye','LeftEye','BothEye'};
 %         fignames    = {[type,'Right_Eye'],[type,'Left_Eye'],[type,'Both_Eye']};
         fignames    = [NAME '_' type]; 
         colors = [1 0 0;0 0 1];
         eyes = {'left','right'};
+        blslabel = {'raw','baseline corrected'};
         nsamplesPerPlot = 30000;
         if strcmpi(type,'center')
             ttrials =1;
@@ -22,27 +23,31 @@ sFc = meta.sF/1000;
             ttrials =3;
         end
         
-        for corbsl = 1:2
+         for corbsl = 1:2
             
-            for tr = 1:3
+            for tr = 1:ttrials
 
                 if tr == 3
                     sbp = 3;      % number of subplots for differents eyes and velocity
                     plt = 2;
                     eye = [1,2];
+                    eyelabel = 'both';
                 elseif tr == 2
                     sbp = 3;
                     plt = 1;
                     eye = 1;
+                    eyelabel = 'left';
                 elseif tr == 1
                     if strcmpi(type,'center')   % girst trial center is 3 minutes?
                         plt = 6;
-                        eye = 2;
+                        eye = [1,2];
                         sbp = 3;
+                        eyelabel = 'both';
                     else
                         sbp = 3;
                         plt = 1;
                         eye = 2;
+                        eyelabel = 'right';
                     end
                 end
                 pp = 1;
@@ -63,7 +68,7 @@ sFc = meta.sF/1000;
                             if corbsl==1
                              bsl = 0;
                                 else
-                            bsl = movavg(trial(tr).(eyes{eye(e)}).samples.x(indxt),250,250,1); 
+                            bsl = movavg2(trial(tr).(eyes{eye(e)}).samples.x(indxt),250,250,1); 
                             end
 
                             plot(t,trial(tr).(eyes{eye(e)}).samples.x(indxt)-bsl','Color',colors(eye(e),:)), hold on
@@ -77,8 +82,8 @@ sFc = meta.sF/1000;
                         if any(pl)
                          ylim([pl(1) 1.1*pl(2)])
 
-                         text([pp*nsamplesPerPlot-nsamplesPerPlot+1+nsamplesPerPlot*.02]/1000,pl(2),'Horizontal Pos','Fontsize',12)
-                         text([pp*nsamplesPerPlot-nsamplesPerPlot+1+nsamplesPerPlot*.9]/1000,pl(2),titlelabels(tr),'Fontsize',12,'Color',colors(eye(e),:))
+                         text([pp*nsamplesPerPlot-nsamplesPerPlot+1+nsamplesPerPlot*.02]/1000,pl(2),['Horizontal Pos ' blslabel{corbsl}],'Fontsize',12)
+                         text([pp*nsamplesPerPlot-nsamplesPerPlot+1+nsamplesPerPlot*.9]/1000,pl(2),eyelabel,'Fontsize',12,'Color',colors(eye(e),:))
                         end
                          box off
     %                     set(gca,'XTickLabels',{})
@@ -99,8 +104,8 @@ sFc = meta.sF/1000;
                          if any(pl)
                         pl = prctile(bb(~isnan(bb)),[1 99]);
                          ylim([pl(1) 1.1*pl(2)])
-                          text([pp*nsamplesPerPlot-nsamplesPerPlot+1+nsamplesPerPlot*.02]/1000,pl(2),'Vertical Pos','Fontsize',12)
-                        text([pp*nsamplesPerPlot-nsamplesPerPlot+1+nsamplesPerPlot*.9]/1000,pl(2),titlelabels(tr),'Fontsize',12,'Color',colors(eye(e),:))
+                          text([pp*nsamplesPerPlot-nsamplesPerPlot+1+nsamplesPerPlot*.02]/1000,pl(2),['Vertical Pos ' blslabel{corbsl}],'Fontsize',12)
+                        text([pp*nsamplesPerPlot-nsamplesPerPlot+1+nsamplesPerPlot*.9]/1000,pl(2),eyelabel,'Fontsize',12,'Color',colors(eye(e),:))
                          end
                            box off
     %                     set(gca,'XTickLabels',{})
@@ -118,23 +123,23 @@ sFc = meta.sF/1000;
                         box off
                         ylim([-300 300])
                          text([pp*nsamplesPerPlot-nsamplesPerPlot+1+nsamplesPerPlot*.02]/1000,300*.9,'Velocity','Fontsize',12)
-                        text([pp*nsamplesPerPlot-nsamplesPerPlot+1+nsamplesPerPlot*.9]/1000,300*.9,titlelabels(tr),'Fontsize',12,'Color',colors(eye(e),:))
+                        text([pp*nsamplesPerPlot-nsamplesPerPlot+1+nsamplesPerPlot*.9]/1000,300*.9,eyelabel,'Fontsize',12,'Color',colors(eye(e),:))
 
                         pp = pp+1;
     %                 end
-                    set(gcf,'name',titlelabels{tr})
+                    set(gcf,'name',eyelabel)
                     tightfig
                     set(gcf,'Position',[19 343 1200 350])
 
                     set(gcf, 'PaperPositionMode', 'auto')
-                    if tr==1 & corbsl==1
+                    if tr==1 && p==1 && corbsl==1
                         export_fig([PATHSTR, filesep, fignames],'-pdf','-transparent')
                     else
                         export_fig([PATHSTR, filesep, fignames],'-pdf','-transparent','-append')
                     end
                 end
             end
-        end
+         end
 end
 
 
