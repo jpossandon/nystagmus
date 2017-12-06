@@ -201,9 +201,10 @@ for ey=1:2
     output_x(ey,starts:ends)    = calibraw(ey).rawx(starts:ends);                                   %px,py are raw data, gx,gy gaze data; hx,hy headref, data from both eye might be included. The easiest would be to use the uncalibrated GAZE gx,gy data             
     output_y(ey,starts:ends)    = calibraw(ey).rawy(starts:ends);
 
-    start_time                  = calibraw(ey).time(1);
-    end_time                    = calibraw(ey).time(end);
-    
+%     start_time(ey,1)            = calibraw(ey).time(1);                    %THIS IS WRONG?
+%     end_time(ey,1)              = calibraw(ey).time(end);
+    start_time(ey,1)            = calibraw(ey).time(starts);                    %THIS IS WRONG?
+    end_time(ey,1)              = calibraw(ey).time(ends);
 end % for each ey
 
 

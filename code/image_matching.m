@@ -58,7 +58,7 @@ else
 end
 
 % Input Dialog Box
-prompt     = {'Subject Number:','Type (1-identity; 2-emotion; 3-object)'};
+prompt     = {'Subject Number (only number):','Type (1-identity; 2-emotion; 3-object)'};
 dlg_title  = 'Image Matching';
 num_lines  = 1;
 defaultans = {'',''};

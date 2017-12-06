@@ -40,8 +40,9 @@
 
 %% new setup
 %%
-sid             = 's099';
-load(['/Users/jossando/trabajo/India/data/' sid '/' sid 'ID.mat'])
+sid             = 's078';
+task            = 'OBJ';
+load(['/Users/jossando/trabajo/India/data/' sid '/' sid task '.mat'])
 
 %  win.rect                    = [0 0 1920 1080];                                  %  horizontal x vertical resolution [pixels]
 %  win.calibType               = 'HV9';
@@ -59,28 +60,37 @@ load(['/Users/jossando/trabajo/India/data/' sid '/' sid 'ID.mat'])
 %     dotinfo.calibpos([1 3 7 9],:)=[];
 %     
 % end
-[trial,meta] = totrial(['/Users/jossando/trabajo/India/data/' sid '/' sid 'ID.edf'],{'raw','gaze'});
+[trial,meta] = totrial(['/Users/jossando/trabajo/India/data/' sid '/' sid task '.edf'],{'raw','gaze'});
 
 %%
-tr = 30;
-if isfield(trial(tr).left,'saccade')
-    useye = 'left';
-else
-    useye = 'right';
-end
+tr = 1;
+for ey = 1:2
+    if ey ==1 && isfield(trial(tr).left,'saccade')
+        useye = 'left';
+    elseif ey ==2 && isfield(trial(tr).right,'saccade')
+        useye = 'right';
+    end
 % load(['/Users/jossando/trabajo/India/data/' sid '/' sid 'ID.mat'])
-% dotinfo = win.calib.dotinfo;
-% trial(tr).(useye).samples.time = trial(tr).(useye).samples.pctime 
-% [caldata,xgaz,ygaz] = calibdata(trial(tr).(useye).samples,trial(tr).(useye).saccade,win,dotinfo,'sample',1);
-[caldata,xgaz,ygaz] = calibdata(win.calib(2).caldata(1).samples,[],win,win.calib(2).dotinfo,'sample',1);
-doimage(gcf,['/Users/jossando/trabajo/India/result/' sid '/'],'png',['calib_' num2str(tr)],1);
+ dotinfo = win.calib.dotinfo;
+ trial(tr).(useye).samples.time = trial(tr).(useye).samples.pctime; 
+%   [caldata,xgaz,ygaz] = calibdata(trial(tr).(useye).samples,trial(tr).(useye).saccade,win,dotinfo,'saccade',1);
+   [caldata(ey),xgaz,ygaz] = calibdata(win.calib(1).caldata(ey).samples,[],win,win.calib(1).dotinfo,'sample',1);
+
+  % doimage(gcf,['/Users/jossando/trabajo/India/result/' sid '/'],'png',['calib_' num2str(tr)],1);
+end
 %%
-for trr=31:58
+eyec = {'b','r'};
+for trr=2:56
     try
     figure
-    im = imread(['/Users/jossando/trabajo/India/images/33/' trial(trr).image.msg]);
+    if strcmp(task,'ID')
+        im = imread(['/Users/jossando/trabajo/India/images/33/' trial(trr).image.msg]);
+    elseif strcmp(task,'OBJ')
+        im = imread(['/Users/jossando/trabajo/India/images/34/' trial(trr).image.msg]);
+    end
     imshow(im),hold on
-    [xgaz,ygaz] = correct_raw(trial(trr).(useye).samples.rawx',trial(trr).(useye).samples.rawy',caldata)
+    for ey = 2
+        [xgaz,ygaz] = correct_raw(trial(trr).(useye).samples.rawx',trial(trr).(useye).samples.rawy',win.calib(1).caldata(ey));
     
 %      indxdrift = find(trial(trr).(useye).samples.time<0)
 %      xdrift  = win.rect(3)/2-median(xgaz(indxdrift));
@@ -88,8 +98,11 @@ for trr=31:58
 %      xgaz    = xgaz-xdrift;
 %     ygaz    = ygaz-ydrift;
 %     
-    plot(xgaz-(win.rect(3)-size(im,2))/2,ygaz-(win.rect(4)-size(im,1))/2,'.b')
-      doimage(gcf,['/Users/jossando/trabajo/India/result/' sid '/'],'png',[trial(trr).image.msg '_' trial(trr).pair_order.msg],1);
+        plot(xgaz-(win.rect(3)-size(im,2))/2,ygaz-(win.rect(4)-size(im,1))/2,['.' eyec{ey}])
+        
+    end
+    figure,plot(xgaz(xgaz>-500 & xgaz<2000))
+%       doimage(gcf,['/Users/jossando/trabajo/India/result/' sid '/'],'png',[trial(trr).image.msg '_' trial(trr).pair_order.msg],1);
     catch
         trr
     end
