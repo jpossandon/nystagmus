@@ -59,16 +59,16 @@ elseif strcmp(win.calibType,'HV5')
     % remove outer points, as currently not used
     dotinfo.calibpos(1:9,1)  = repmat(mPix(1):(win.rect(3)-2*(mPix(1)))/2:win.rect(3)-mPix(1),1,3);
     dotinfo.calibpos(1:9,2)  = reshape(repmat(mPix(2):(win.rect(4)-2*(mPix(2)))/2:win.rect(4)-mPix(2),3,1),9,1);
-    indxs                    = [5,randsample([1:4,6:9],8),5];               % start and end in the midldle, other are random
+%     indxs                    = [5,randsample([1:4,6:9],8),5];               % start and end in the midldle, other are random
     dotinfo.calibpos([1 3 7 9],:)=[];
     indxs                    = [3,randsample([1 2 4 5],4),3];
 
 end
-dotinfo.rawCalib(1).pos      = nan(length(indxs),2);
+dotinfo.rawCalib(1).pos      = nan(length(indxs),2);                        % this is used later to plot the uncalibrated raw position of the calibration dots (as numbers) in the selection screen
 dotinfo.rawCalib(2).pos      = nan(length(indxs),2);
 dotinfo.validation_flag      = 0;
-dotinfovalid                 = dotinfo;
-dotinfovalid.validation_flag      = 1;
+dotinfovalid                 = dotinfo;                                     % same info for doing validation
+dotinfovalid.validation_flag = 1;
 
 Screen('FillRect', win.hndl, win.bkgcolor);                                 % remove what was written or displayed
 tFlip = Screen('Flip', win.hndl);
@@ -277,7 +277,7 @@ while current_position < length(indxs)+1
             calibraw_select.rawx = [calibraw_select.rawx xsample];                         %px,py are raw data, gx,gy gaze data; hx,hy headref, data from both eye might be included. The easiest would be to use the uncalibrated GAZE gx,gy data             
             calibraw_select.rawy = [calibraw_select.rawy ysample];
             
-            dotinfo.tstart_dots(:,current_position) = start_time;
+            dotinfo.tstart_dots(:,current_position) = start_time;           % 2 value vector one for each eye
             dotinfo.tend_dots(:,current_position)   = end_time;
             
             dotinfo.rawCalib(1).pos(current_position,:)     = [nanmedian(xsample(1,:)) nanmedian(ysample(1,:))];
@@ -314,22 +314,24 @@ while current_position < length(indxs)+1
                     calibraw(ey).rawy=calibraw_select.rawy(ey,:);
                     calibraw(ey).time=calibraw_select.time(ey,:);
                 end
-                dotinfo(2) = dotinfo;
-                dotinfo(1).tstart_dots = dotinfo(1).tstart_dots(1,:); 
-                dotinfo(2).tstart_dots = dotinfo(2).tstart_dots(2,:);
-                dotinfo(1).tend_dots = dotinfo(1).tend_dots(1,:); 
-                dotinfo(2).tend_dots = dotinfo(2).tend_dots(2,:);
+                dotinfoselect = dotinfo;                                    % separates dotinfo structure into two one for each eye
+                dotinfoselect(2) = dotinfoselect;
+                dotinfoselect(1).tstart_dots = dotinfoselect(1).tstart_dots(1,:); 
+                dotinfoselect(2).tstart_dots = dotinfoselect(2).tstart_dots(2,:);
+                dotinfoselect(1).tend_dots = dotinfoselect(1).tend_dots(1,:); 
+                dotinfoselect(2).tend_dots = dotinfoselect(2).tend_dots(2,:);
             else
                for ey=1:2
                     validraw(ey).rawx=validraw_select.rawx(ey,:);
                     validraw(ey).rawy=validraw_select.rawy(ey,:);
                     validraw(ey).time=validraw_select.time(ey,:);
                end 
-               dotinfovalid(2) = dotinfovalid;
-               dotinfovalid(1).tstart_dots = dotinfovalid(1).tstart_dots(1,:); 
-               dotinfovalid(2).tstart_dots = dotinfovalid(2).tstart_dots(2,:);
-               dotinfovalid(1).tend_dots = dotinfovalid(1).tend_dots(1,:); 
-               dotinfovalid(2).tend_dots = dotinfovalid(2).tend_dots(2,:);
+               dotinfoselectvalid = dotinfovalid;
+               dotinfoselectvalid(2) = dotinfoselectvalid;
+               dotinfoselectvalid(1).tstart_dots = dotinfoselectvalid(1).tstart_dots(1,:); 
+               dotinfoselectvalid(2).tstart_dots = dotinfoselectvalid(2).tstart_dots(2,:);
+               dotinfoselectvalid(1).tend_dots = dotinfoselectvalid(1).tend_dots(1,:); 
+               dotinfoselectvalid(2).tend_dots = dotinfoselectvalid(2).tend_dots(2,:);
             end
         end
        
@@ -341,7 +343,7 @@ while current_position < length(indxs)+1
         Screen('DrawDots', win.hndl, dotinfo(1).calibpos',win.dotSize*win.rect(3)/100/3,256,[0 0],1); % calibration dot position
         Screen('DrawDots', win.hndl, dotinfo(1).calibpos',win.dotSize*win.rect(3)/100*.3/3,0,[0 0],1);
 
-        if strcmp(win.calibration_type,'saccade');
+        if strcmp(win.calibration_type,'saccade')
             eyes_with_sacc_data=length(calibsac);
         else                        
             eyes_with_sacc_data=2; 
@@ -355,10 +357,10 @@ while current_position < length(indxs)+1
                 if validation_flag == 0
                     % this is the calibration calculation, ux and uy are used
                     % to correct data, and to correct the validation
-                    [caldata(ey),xgaz,ygaz] = calibdata(calibraw(ey),calibsac(ey),win,dotinfo(ey),clType,0);
+                    [caldata(ey),xgaz,ygaz] = calibdata(calibraw(ey),calibsac(ey),win,dotinfoselect(ey),clType,0);
                 else
                     % for validation calibdata is colled only to get the uncorrected positions 
-                     [valdata(ey)] = calibdata(validraw(ey),validsac(ey),win,dotinfovalid(ey),clType,0);      %it seems that ingoring output with a tilde does not work in windows?
+                     [valdata(ey)] = calibdata(validraw(ey),validsac(ey),win,dotinfoselectvalid(ey),clType,0);      %it seems that ingoring output with a tilde does not work in windows?
                 end
             catch
                 calibfailure = 1;
@@ -375,8 +377,8 @@ while current_position < length(indxs)+1
                 if validation_flag == 0
     %                 Screen('DrawDots', win.hndl, [calibraw(ey).rawx(1,:);calibraw(ey).rawy(1,:)],4,col_raw,[0 0],1);  %uncorrected data
                     Screen('DrawDots', win.hndl, [xgaz;ygaz],6,col_correct,[0 0],0);  
-                    for pt = 1:size(dotinfo(ey).dot_order,1)
-                        Screen('DrawText', win.hndl,num2str(dotinfo(ey).dot_order(pt)),caldata(ey).correctedDotPos(1,dotinfo(ey).dot_order(pt)),caldata(ey).correctedDotPos(2,dotinfo(ey).dot_order(pt)),[255 255 255]);
+                    for pt = 1:size(dotinfo.dot_order,1)
+                        Screen('DrawText', win.hndl,num2str(dotinfo.dot_order(pt)),caldata(ey).correctedDotPos(1,dotinfo.dot_order(pt)),caldata(ey).correctedDotPos(2,dotinfo.dot_order(pt)),[255 255 255]);
                   %plot here uncorrected dot position to see the order of the
                   %calibrtion grid
                     end
@@ -396,10 +398,14 @@ while current_position < length(indxs)+1
                     Screen('DrawDots', win.hndl, caldata(ey).correctedValidationPos,win.dotSize/2*win.rect(3)/100*.3/3,0,[0 0],0);
                     % draw a line between the absolute position of the
                     % calibration dot and the validation position
-                    Screen('DrawLines',win.hndl, reshape([dotinfo(ey).calibpos';caldata(ey).correctedValidationPos],2,18),2,255,[0 0]);
-                    for pt = 1:size(dotinfo(ey).dot_order,1)
-                        caldata(ey).validError(dotinfo(ey).dot_order(pt)) = sqrt((dotinfo(ey).calibpos(dotinfo(ey).dot_order(pt),1)-caldata(ey).correctedValidationPos(1,dotinfo(ey).dot_order(pt))).^2+(dotinfo(ey).calibpos(dotinfo(ey).dot_order(pt),2)-caldata(ey).correctedValidationPos(2,dotinfo(ey).dot_order(pt))).^2)./win.pixxdeg;
-                         Screen('DrawText', win.hndl,sprintf('%2.2f',caldata(ey).validError(dotinfo(ey).dot_order(pt))),caldata(ey).correctedValidationPos(1,dotinfo(ey).dot_order(pt)),caldata(ey).correctedValidationPos(2,dotinfo(ey).dot_order(pt)),[255 255 0]);
+                    if strcmp(win.calibType,'HV9')   
+                        Screen('DrawLines',win.hndl, reshape([dotinfo.calibpos';caldata(ey).correctedValidationPos],2,18),2,255,[0 0]);
+                     elseif strcmp(win.calibType,'HV5')
+                        Screen('DrawLines',win.hndl, reshape([dotinfo.calibpos';caldata(ey).correctedValidationPos],2,10),2,255,[0 0]);
+                    end
+                    for pt = 1:size(dotinfo.dot_order,1)
+                        caldata(ey).validError(dotinfo.dot_order(pt)) = sqrt((dotinfo.calibpos(dotinfo.dot_order(pt),1)-caldata(ey).correctedValidationPos(1,dotinfo.dot_order(pt))).^2+(dotinfo.calibpos(dotinfo.dot_order(pt),2)-caldata(ey).correctedValidationPos(2,dotinfo.dot_order(pt))).^2)./win.pixxdeg;
+                         Screen('DrawText', win.hndl,sprintf('%2.2f',caldata(ey).validError(dotinfo.dot_order(pt))),caldata(ey).correctedValidationPos(1,dotinfo.dot_order(pt)),caldata(ey).correctedValidationPos(2,dotinfo.dot_order(pt)),[255 255 0]);
                     end
                 end
             end
@@ -436,6 +442,8 @@ while current_position < length(indxs)+1
                     validation_flag = 0;
                     calibraw = [];
                     calibsac = [];
+                    dotinfo.rawCalib(1).pos      = nan(length(indxs),2);                        % this is used later to plot the uncalibrated raw position of the calibration dots (as numbers) in the selection screen
+                    dotinfo.rawCalib(2).pos      = nan(length(indxs),2);
                     break
                 end
             end
@@ -445,7 +453,7 @@ end
 if ~dummy
     Eyelink('StopRecording');
 end
-
+dotinfo = dotinfoselect;
 WaitSecs(0.01);
 % PsychPortAudio('Close', pahandle1);
 % PsychPortAudio('Close', pahandle2); 

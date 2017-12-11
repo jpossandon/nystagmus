@@ -29,8 +29,8 @@ win.msgfontcolour           = [255 255 255];% screen background color, 127 gray
 win.Vdst                    = 60;                                           % (!CHANGE!) viewer's distance from screen [cm]         
 win.wdth                    = 52.5;%51;                                           %  51X28.7 cms is teh size of Samsung Syncmaster P2370 in BPN lab EEG rechts
 win.hght                    = 29.5;%28.7;                                         % 42x23 is HP screen in eyetrackin clinic
-win.dotSize                 = 4; % [% of window width]
-win.calibType               = 'HV9';
+win.dotSize                 = 4; % [% of window width]                      % 52,5 x 29x5 is monitor in OPd LVPEI
+win.calibType               = 'HV5';
 win.calibration_type        = 'saccade';
 win.dotflickfreq            = 5;                                          % Hz
 win.margin                  = [30 20];
@@ -291,10 +291,56 @@ for nT = 1:nTrials                                                          % lo
            elseif strcmp(exptype,'EM')
                 Screen('DrawText', win.hndl, 'SAME EMOTION (S)  DIFFERENT EMOTION (D)', win.cntr(1), win.cntr(2), win.foregroundcolour);
            elseif strcmp(exptype,'OBJ')
-                Screen('DrawText', win.hndl, 'SAME CATEGORY (S)  DIFFERENT CATEGORY (D)', win.cntr(1), win.cntr(2), win.foregroundcolour);
+                Screen('DrawText', win.hndl, 'RECOGNIZES BOTH (B)', win.cntr(1), win.cntr(2), win.foregroundcolour);
+                Screen('DrawText', win.hndl, 'RECOGNIZES ONLY FIRST (C)', win.cntr(1), win.cntr(2)+20, win.foregroundcolour);
+                Screen('DrawText', win.hndl, 'RECOGNIZES ONLY SECOND (V)', win.cntr(1), win.cntr(2)+40, win.foregroundcolour);
+                Screen('DrawText', win.hndl, 'RECOGNIZES NONE (N)', win.cntr(1), win.cntr(2)+60, win.foregroundcolour);
            end
             Screen('Flip', win.hndl); 
             while 1
+                [keyIsDown,seconds,keyCode] = KbCheck;
+                 if keyIsDown
+                     if ~strcmp(exptype,'OBJ')
+                        if keyCode(KbName('S')) 
+                            win.response(nT) = 1;
+                            break
+                        end
+                        if keyCode(KbName('D')) 
+                            win.response(nT) = 2;
+                            break
+                        end
+                     else
+                         if keyCode(KbName('B')) 
+                            win.result(nT) = 1;
+                            win.result(nT-1) = 1;
+                            break
+                        end
+                        if keyCode(KbName('C')) 
+                            win.result(nT) = 0;
+                            win.result(nT-1) = 1;
+                            break
+                        end
+                        if keyCode(KbName('V')) 
+                            win.result(nT) = 1;
+                            win.result(nT-1) = 0;
+                            break
+                        end
+                        if keyCode(KbName('N')) 
+                            win.result(nT) = 0;
+                            win.result(nT-1) = 0;
+                            break
+                        end
+                    end
+                 end
+                 
+            end
+            while KbCheck
+            end
+            if strcmp(exptype,'OBJ')
+               Screen('DrawText', win.hndl, 'SAME OBJECT TYPE (S)  DIFFERENT OBJECT TYPE (D)', win.cntr(1), win.cntr(2), win.foregroundcolour);
+            
+             Screen('Flip', win.hndl); 
+             while 1
                 [keyIsDown,seconds,keyCode] = KbCheck;
                  if keyIsDown
                     if keyCode(KbName('S')) 
@@ -306,6 +352,7 @@ for nT = 1:nTrials                                                          % lo
                         break
                     end
                  end
+             end
             end
             if strcmp(exptype,'ID')
                 if (ismember(win.ttype(nT),[1 2]) && win.response(nT) == 1) || ...
@@ -323,18 +370,15 @@ for nT = 1:nTrials                                                          % lo
                         (ismember(win.ttype(nT),[2 4]) && win.response(nT) == 1) 
                     win.result(nT) = 0; 
                  end
-            elseif strcmp(exptype,'OBJ')
-                 if (ismember(win.ttype(nT),[5,6]) && win.response(nT) == 1) || ...
-                        (ismember(win.ttype(nT),[7]) && win.response(nT) == 2) 
-                    win.result(nT) = 1;
-                elseif (ismember(win.ttype(nT),[5,6]) && win.response(nT) == 2) || ...
-                        (ismember(win.ttype(nT),[7]) && win.response(nT) == 1) 
-                    win.result(nT) = 0; 
-                end    
+%             elseif strcmp(exptype,'OBJ')
+%                  win.response(nT) = NaN;   
+%                  win.response(nT-1) = NaN;  
             end
         else
-             win.response(nT) = NaN;
-             win.result(nT)   = NaN; 
+            win.response(nT) = NaN;
+            if ~strcmp(exptype,'OBJ')
+                win.result(nT)   = NaN;
+            end
         end
     end
     if escape_flag
@@ -390,14 +434,12 @@ ListenChar(1)                                                               % re
 
 %%
 % feedback
-ttypesLabels = {'SI/SE','SI/DE','DI/SE','DI/DE','ANIMAL 1ST','ANIMAL 2ND'}; 
+ttypesLabels = {'SI/SE','SI/DE','DI/SE','DI/DE'}; 
     
 if strcmp(exptype,'ID') || strcmp(exptype,'EM')
     ttts = 1:4;
-elseif strcmp(exptype,'OBJ')
-    ttts = 5:6;
+    for ttt=ttts
+        auxperf = win.result(win.ttype(1:length(win.result))==ttt & win.pairOrder(1:length(win.result))==2 & ones(1,length(win.result)));
+        fprintf('\n%s performance %s: %d/%d',exptype,ttypesLabels{ttt},sum(auxperf),length(auxperf))
+    end
 end
-for ttt=ttts
-    auxperf = win.result(win.ttype(1:length(win.result))==ttt & win.pairOrder(1:length(win.result))==2 & ones(1,length(win.result)));
-    fprintf('\n%s performance %s: %d/%d',exptype,ttypesLabels{ttt},sum(auxperf),length(auxperf))
-end 

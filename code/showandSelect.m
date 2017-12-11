@@ -1,6 +1,6 @@
 function [output_x,output_y,output_time,accept,start_time,end_time] = showandSelect(win,calibraw,calibsac,dotinfo)
 
-save('test1','calibraw','calibsac')
+% save('test1','calibraw','calibsac')
 
 % setup display colors
 horcol         = [0 0 255];
@@ -26,7 +26,7 @@ for ey=1:2
         % remove missing values
         xmiss     = abs(xsample)==30000 | abs(xsample)==32768;
         ymiss     = abs(ysample)==30000 | abs(ysample)==32768;
-        for rmv = 1:10   % remove ten sample around missing
+        for rmv = 1:50   % remove ten sample around missing
             xmiss = sum([xmiss;[diff(xmiss) 0];[0 fliplr(diff(fliplr(xmiss)))]]~=0)>0;
             ymiss = sum([ymiss;[diff(ymiss) 0];[0 fliplr(diff(fliplr(ymiss)))]]~=0)>0;
         end
@@ -42,6 +42,7 @@ for ey=1:2
         xsample     = xsample - smallest_sample;
         ysample     = ysample - smallest_sample;
         bigest_sample = max([max(xsample) max(ysample)]);
+        
         % make display box limits
         xpixmin = .05*win.rect(3);
         xpixmax = .90*win.rect(3);
@@ -49,14 +50,24 @@ for ey=1:2
         ypixmax = .40*win.rect(4);
         cuad4Rect = [win.rect(3).*.6,win.rect(4).*.6,win.rect(3).*.9,win.rect(4).*.9];
         
-        if any(dotinfo.rawCalib(ey).pos)
-            rawCalibToplot(:,1) = ((dotinfo.rawCalib(ey).pos(:,1)+30000)/60000).*(cuad4Rect(3)-cuad4Rect(1))+cuad4Rect(1);
-            rawCalibToplot(:,2) = ((dotinfo.rawCalib(ey).pos(:,2)+30000)/60000).*(cuad4Rect(4)-cuad4Rect(2))+cuad4Rect(2);
+        if isnan(dotinfo.rawCalib(ey).pos(2,1))==1                             % the first point uses the eyetracker raw data limits
+            minLim = [-30000 -30000];
+            maxLim = [30000 30000];
+        else
+%             if ey==2
+%                  ey
+%             end
+                
+                % next points uses the collected points minimum and maximum
+            minLim = [min(dotinfo.rawCalib(ey).pos(:,1))-1000 min(dotinfo.rawCalib(ey).pos(:,2))-1000];
+            maxLim = [max(dotinfo.rawCalib(ey).pos(:,1))+1000 max(dotinfo.rawCalib(ey).pos(:,2))+1000];
         end
-%         if any(dotinfo.rawCalib(ey).pos)
-%             rawValidToplot(:,1) = ((dotinfo.rawCalib(ey).pos(:,1)+30000)/60000).*(cuad4Rect(3)-cuad4Rect(1))+cuad4Rect(1);
-%             rawValidToplot(:,2) = ((dotinfo.rawCalib(ey).pos(:,2)+30000)/60000).*(cuad4Rect(4)-cuad4Rect(2))+cuad4Rect(2);
-%         end
+        % defines the values to plot in the screen from the rawCalib
+        if any(dotinfo.rawCalib(ey).pos)
+            rawCalibToplot(:,1) = ((dotinfo.rawCalib(ey).pos(:,1)-minLim(1))/(maxLim(1)-minLim(1))).*(cuad4Rect(3)-cuad4Rect(1))+cuad4Rect(1);
+            rawCalibToplot(:,2) = ((dotinfo.rawCalib(ey).pos(:,2)-minLim(2))/(maxLim(2)-minLim(2))).*(cuad4Rect(4)-cuad4Rect(2))+cuad4Rect(2);
+        end
+
         % create xvalues
         % teh problem here is that values are not well spaced
          xpix = linspace(xpixmin,xpixmin+xpixmax,length(xsample));
@@ -201,9 +212,7 @@ for ey=1:2
     output_x(ey,starts:ends)    = calibraw(ey).rawx(starts:ends);                                   %px,py are raw data, gx,gy gaze data; hx,hy headref, data from both eye might be included. The easiest would be to use the uncalibrated GAZE gx,gy data             
     output_y(ey,starts:ends)    = calibraw(ey).rawy(starts:ends);
 
-%     start_time(ey,1)            = calibraw(ey).time(1);                    %THIS IS WRONG?
-%     end_time(ey,1)              = calibraw(ey).time(end);
-    start_time(ey,1)            = calibraw(ey).time(starts);                    %THIS IS WRONG?
+    start_time(ey,1)            = calibraw(ey).time(starts);                    
     end_time(ey,1)              = calibraw(ey).time(ends);
 end % for each ey
 

@@ -40,8 +40,8 @@
 
 %% new setup
 %%
-sid             = 's078';
-task            = 'OBJ';
+sid             = 's079';
+task            = 'ID';
 load(['/Users/jossando/trabajo/India/data/' sid '/' sid task '.mat'])
 
 %  win.rect                    = [0 0 1920 1080];                                  %  horizontal x vertical resolution [pixels]
