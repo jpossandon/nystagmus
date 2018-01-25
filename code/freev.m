@@ -40,7 +40,7 @@
 
 %% new setup
 %%
-sid             = 's079';
+sid             = 's030';
 task            = 'ID';
 load(['/Users/jossando/trabajo/India/data/' sid '/' sid task '.mat'])
 
@@ -64,6 +64,8 @@ load(['/Users/jossando/trabajo/India/data/' sid '/' sid task '.mat'])
 
 %%
 tr = 1;
+method = 'saccade';
+method = 'sample';
 for ey = 1:2
     if ey ==1 && isfield(trial(tr).left,'saccade')
         useye = 'left';
@@ -71,16 +73,17 @@ for ey = 1:2
         useye = 'right';
     end
 % load(['/Users/jossando/trabajo/India/data/' sid '/' sid 'ID.mat'])
- dotinfo = win.calib.dotinfo;
- trial(tr).(useye).samples.time = trial(tr).(useye).samples.pctime; 
-%   [caldata,xgaz,ygaz] = calibdata(trial(tr).(useye).samples,trial(tr).(useye).saccade,win,dotinfo,'saccade',1);
-   [caldata(ey),xgaz,ygaz] = calibdata(win.calib(1).caldata(ey).samples,[],win,win.calib(1).dotinfo,'sample',1);
+%  dotinfo = win.calib.dotinfo(ey);
+%  trial(tr).(useye).samples.time = trial(tr).(useye).samples.pctime; 
+% [caldata,xgaz,ygaz] = calibdata(trial(tr).(useye).samples,trial(tr).(useye).saccade,win,dotinfo,'saccade',1);
+   [caldata(ey),xgaz,ygaz] = calibdata(win.calib.caldata(ey).samples,[],win,win.calib.dotinfo(ey),'sample',1);
 
   % doimage(gcf,['/Users/jossando/trabajo/India/result/' sid '/'],'png',['calib_' num2str(tr)],1);
 end
 %%
 eyec = {'b','r'};
-for trr=2:56
+driftcor = 1
+for trr=10:20
     try
     figure
     if strcmp(task,'ID')
@@ -89,14 +92,23 @@ for trr=2:56
         im = imread(['/Users/jossando/trabajo/India/images/34/' trial(trr).image.msg]);
     end
     imshow(im),hold on
-    for ey = 2
-        [xgaz,ygaz] = correct_raw(trial(trr).(useye).samples.rawx',trial(trr).(useye).samples.rawy',win.calib(1).caldata(ey));
-    
-%      indxdrift = find(trial(trr).(useye).samples.time<0)
-%      xdrift  = win.rect(3)/2-median(xgaz(indxdrift));
-%      ydrift  = win.rect(4)/2-median(ygaz(indxdrift));
-%      xgaz    = xgaz-xdrift;
-%     ygaz    = ygaz-ydrift;
+    for ey = 1:2
+        if driftcor
+            xdriftc = trial(trr).(useye).samples.rawx'-nanmedian(trial(trr).(useye).samples.rawx(indxdrift)')+caldata(ey).rawCenter(1);
+            ydriftc = trial(trr).(useye).samples.rawy'-nanmedian(trial(trr).(useye).samples.rawy(indxdrift)')+caldata(ey).rawCenter(2);
+            [xgaz,ygaz] = correct_raw(xdriftc,ydriftc,caldata(ey));
+        else
+            [xgaz,ygaz] = correct_raw(trial(trr).(useye).samples.rawx',trial(trr).(useye).samples.rawy',caldata(ey));
+        end
+%       indxdrift = find(trial(trr).(useye).samples.time<0)
+%       
+%       [xgaz,ygaz] = correct_raw(trial(trr).(useye).samples.rawx'-nanmedian(trial(trr).(useye).samples.rawx(indxdrift)'),...
+%           trial(trr).(useye).samples.rawy'-nanmedian(trial(trr).(useye).samples.rawy(indxdrift)'),caldata(ey));
+%     
+%       xdrift  = win.rect(3)/2-nanmedian(xgaz(indxdrift));
+%       ydrift  = win.rect(4)/2-nanmedian(ygaz(indxdrift));
+%       xgaz    = xgaz-xdrift;
+%      ygaz    = ygaz-ydrift;
 %     
         plot(xgaz-(win.rect(3)-size(im,2))/2,ygaz-(win.rect(4)-size(im,1))/2,['.' eyec{ey}])
         

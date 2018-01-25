@@ -122,13 +122,18 @@ for pt = 1:size(dotinfo.dot_order,1)
     end
 end
 
- xyRc = xyR(:,5);
-xyR = xyR-repmat(xyRc,1,size(xyR,2)); 
+% change 28.12.17, this need to go inside the cener in HV5 is the 3rd one
+% xyRc = xyR(:,5);
+% xyR = xyR-repmat(xyRc,1,size(xyR,2)); 
 if strcmp(win.calibType,'HV9') 
+   xyRc = xyR(:,5);
+   xyR = xyR-repmat(xyRc,1,size(xyR,2));
    ixC = [2,4,5,6,8];
 elseif strcmp(win.calibType,'HV5')
 % calibration dots top,left,center,right,bottom are the ones used for the basic calibration equation
-     ixC = [1,2,3,4,5];
+    xyRc = xyR(:,3);
+    xyR = xyR-repmat(xyRc,1,size(xyR,2)); 
+    ixC = [1,2,3,4,5];
 end
 A   = [ones(5,1),xyR(1,ixC)',xyR(2,ixC)',xyR(1,ixC).^2',xyR(2,ixC).^2'];
 % bx  = dotinfo.calibpos(ixC,1);

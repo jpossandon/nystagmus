@@ -1,4 +1,4 @@
-function [caldata,dotinfo] = do_calib(win,TRIALID,dummy)
+function [caldata,dotinfo,dotinfovalid] = do_calib(win,TRIALID,dummy)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % do_calib(win,TRIALID)
 % 
@@ -268,6 +268,11 @@ while current_position < length(indxs)+1
             Screen('FillOval', win.hndl,255.*cmap(ceil(GetSecs-last_dotTime),:), dotrect1);
             Screen('FillOval', win.hndl, 0, dotrect2);
             tFlip = Screen('AsyncFlipBegin', win.hndl,[],2);
+            if validation_flag == 0
+                Eyelink('message','METATR caldotst %d',indxs(current_position)); 
+            else
+                Eyelink('message','METATR valdotst %d',indxs(current_position)); 
+            end
         end
     end
      while KbCheck; end

@@ -202,10 +202,11 @@ for nT = 1:nTrials                                                          % lo
                     end
                  end
             end
-            [caldata,dotinfo] = do_calib(win,nT,win.DoDummyMode);
-            win.calib(b).caldata  = caldata;
+            [caldata,dotinfo,dotinfovalid] = do_calib(win,nT,win.DoDummyMode);
+            win.calib(b).caldata        = caldata;
 %             win.calib(b).calibraw = calibraw;
-            win.calib(b).dotinfo  = dotinfo;
+            win.calib(b).dotinfo        = dotinfo;
+            win.calib(b).dotinfovalid   = dotinfovalid;
         end
         Screen('Flip', win.hndl);
         win.response(nT) = NaN;
